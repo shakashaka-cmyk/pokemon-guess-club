@@ -95,11 +95,8 @@ wss.on('connection', (ws) => {
         const clientEntry = room.clients.find(c => c.name === msg.name);
         if (clientEntry) clientEntry.ws = ws;
         else room.clients.push({ name: msg.name, ws });
-        sendTo(ws, { type: 'rejoined', roomId });
-        sendTo(ws, { type: 'restore_hand', hand: existing.hand, usedCards: existing.usedCards });
-        if (room.phase === 'hand_input') {
-          sendTo(ws, { type: 'your_turn_input', theme: room.currentTheme });
-        }
+        // rejoinedに手札データを含めて一発で送る
+        sendTo(ws, { type: 'rejoined', roomId, hand: existing.hand, usedCards: existing.usedCards, phase: room.phase, theme: room.currentTheme });
         broadcast(roomId, getRoomState(roomId));
         return;
       }
