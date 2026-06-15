@@ -6,998 +6,649 @@
 <title>ポケモン ゲスクラブ</title>
 <link href="https://fonts.googleapis.com/css2?family=Zen+Dots&family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --red: #E3350D;
-    --yellow: #FFCB05;
-    --blue: #003A70;
-    --white: #FAFAF7;
-    --dark: #1a1a2e;
-    --gray: #4a4a6a;
-    --light: #f0f0f8;
-    --card-bg: #ffffff;
-    --prize-pool: #FFCB05;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'M PLUS Rounded 1c', sans-serif;
-    background: var(--dark);
-    color: var(--white);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background:
-      radial-gradient(ellipse at 20% 20%, rgba(227,53,13,0.15) 0%, transparent 50%),
-      radial-gradient(ellipse at 80% 80%, rgba(0,58,112,0.3) 0%, transparent 50%);
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .screen { display: none; position: relative; z-index: 1; }
-  .screen.active { display: flex; flex-direction: column; min-height: 100vh; }
-
-  /* ===== HEADER ===== */
-  .header {
-    background: var(--red);
-    padding: 12px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 4px solid var(--yellow);
-    flex-shrink: 0;
-  }
-  .logo {
-    font-family: 'Zen Dots', sans-serif;
-    font-size: 18px;
-    color: var(--yellow);
-    letter-spacing: 1px;
-  }
-  .round-badge {
-    background: var(--yellow);
-    color: var(--dark);
-    font-size: 11px;
-    font-weight: 800;
-    padding: 4px 10px;
-    border-radius: 20px;
-  }
-
-  /* ===== TITLE SCREEN ===== */
-  #screen-title {
-    align-items: center;
-    justify-content: center;
-    padding: 40px 20px;
-    text-align: center;
-    gap: 32px;
-  }
-  .pokeball-icon {
-    width: 80px; height: 80px;
-    border-radius: 50%;
-    background: linear-gradient(180deg, var(--red) 50%, white 50%);
-    border: 4px solid var(--dark);
-    position: relative;
-    box-shadow: 0 0 0 3px var(--yellow);
-    animation: spin-in 0.8s cubic-bezier(.34,1.56,.64,1) both;
-  }
-  .pokeball-icon::before {
-    content: '';
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%,-50%);
-    width: 20px; height: 20px;
-    border-radius: 50%;
-    background: white;
-    border: 3px solid var(--dark);
-    z-index: 1;
-  }
-  .pokeball-icon::after {
-    content: '';
-    position: absolute;
-    top: calc(50% - 2px); left: 0; right: 0;
-    height: 4px;
-    background: var(--dark);
-  }
-  @keyframes spin-in {
-    from { transform: rotate(-180deg) scale(0); opacity: 0; }
-    to { transform: rotate(0) scale(1); opacity: 1; }
-  }
-  .title-main {
-    font-family: 'Zen Dots', sans-serif;
-    font-size: 28px;
-    color: var(--yellow);
-    text-shadow: 2px 2px 0 var(--red);
-    line-height: 1.2;
-  }
-  .title-sub { font-size: 13px; color: rgba(255,255,255,0.6); margin-top: 6px; }
-
-  /* ===== SETUP SCREEN ===== */
-  #screen-setup { padding: 20px 16px; gap: 16px; }
-  .section-title {
-    font-size: 11px;
-    font-weight: 800;
-    color: var(--yellow);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-  }
-  .player-list { display: flex; flex-direction: column; gap: 8px; }
-  .player-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .player-avatar {
-    width: 36px; height: 36px;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px;
-    flex-shrink: 0;
-    border: 2px solid rgba(255,255,255,0.2);
-  }
-  input[type=text] {
-    flex: 1;
-    background: rgba(255,255,255,0.08);
-    border: 1.5px solid rgba(255,255,255,0.2);
-    border-radius: 10px;
-    padding: 10px 14px;
-    color: white;
-    font-family: inherit;
-    font-size: 14px;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  input[type=text]:focus { border-color: var(--yellow); }
-  input[type=text]::placeholder { color: rgba(255,255,255,0.3); }
-  .remove-btn {
-    background: none;
-    border: none;
-    color: rgba(255,255,255,0.3);
-    font-size: 20px;
-    cursor: pointer;
-    padding: 4px;
-    line-height: 1;
-    transition: color 0.2s;
-  }
-  .remove-btn:hover { color: var(--red); }
-
-  /* ===== BUTTONS ===== */
-  .btn {
-    padding: 14px 24px;
-    border-radius: 14px;
-    border: none;
-    font-family: inherit;
-    font-weight: 800;
-    font-size: 15px;
-    cursor: pointer;
-    transition: transform 0.1s, opacity 0.2s;
-    width: 100%;
-  }
-  .btn:active { transform: scale(0.97); }
-  .btn-primary {
-    background: var(--yellow);
-    color: var(--dark);
-  }
-  .btn-secondary {
-    background: rgba(255,255,255,0.1);
-    color: white;
-    border: 1.5px solid rgba(255,255,255,0.2);
-  }
-  .btn-red { background: var(--red); color: white; }
-  .btn-sm {
-    padding: 8px 16px;
-    font-size: 13px;
-    border-radius: 10px;
-    width: auto;
-  }
-  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-  /* ===== CARD ===== */
-  .card {
-    background: rgba(255,255,255,0.07);
-    border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 16px;
-    padding: 16px;
-  }
-
-  /* ===== THEME SCREEN ===== */
-  #screen-theme { padding: 20px 16px; gap: 16px; }
-  .theme-display {
-    background: var(--yellow);
-    color: var(--dark);
-    border-radius: 20px;
-    padding: 24px 20px;
-    text-align: center;
-  }
-  .theme-label { font-size: 11px; font-weight: 800; letter-spacing: 2px; opacity: 0.6; margin-bottom: 8px; }
-  .theme-text { font-family: 'Zen Dots', sans-serif; font-size: 22px; font-weight: 700; line-height: 1.3; }
-
-  .prize-pool-display {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: rgba(255,203,5,0.1);
-    border: 1.5px solid var(--yellow);
-    border-radius: 14px;
-    padding: 14px 16px;
-  }
-  .prize-label { font-size: 12px; color: var(--yellow); font-weight: 700; }
-  .prize-amount { font-family: 'Zen Dots', sans-serif; font-size: 28px; color: var(--yellow); }
-
-  /* ===== HAND INPUT SCREEN ===== */
-  #screen-hand { padding: 20px 16px; gap: 14px; }
-  .player-turn-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: rgba(255,255,255,0.06);
-    border-radius: 14px;
-    padding: 12px 16px;
-  }
-  .card-slots { display: flex; flex-direction: column; gap: 8px; }
-  .card-slot {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: rgba(255,255,255,0.05);
-    border: 1.5px solid rgba(255,255,255,0.15);
-    border-radius: 12px;
-    padding: 10px 14px;
-  }
-  .card-num {
-    width: 24px; height: 24px;
-    background: var(--red);
-    color: white;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 12px;
-    font-weight: 800;
-    flex-shrink: 0;
-  }
-  .card-slot input {
-    border: none;
-    background: none;
-    padding: 0;
-    font-size: 15px;
-  }
-  .card-slot input:focus { border: none; }
-
-  /* ===== PLAY SCREEN ===== */
-  #screen-play { padding: 20px 16px; gap: 14px; }
-  .current-player-card {
-    background: var(--red);
-    border-radius: 18px;
-    padding: 16px;
-    text-align: center;
-  }
-  .current-player-label { font-size: 11px; opacity: 0.7; letter-spacing: 1px; margin-bottom: 4px; }
-  .current-player-name { font-size: 20px; font-weight: 800; }
-  .current-player-money { font-family: 'Zen Dots', sans-serif; font-size: 14px; opacity: 0.85; margin-top: 2px; }
-
-  .hand-cards { display: flex; flex-direction: column; gap: 8px; }
-  .hand-card {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: rgba(255,255,255,0.07);
-    border: 1.5px solid rgba(255,255,255,0.15);
-    border-radius: 12px;
-    padding: 12px 16px;
-    cursor: pointer;
-    transition: all 0.15s;
-    user-select: none;
-  }
-  .hand-card:hover { border-color: var(--yellow); background: rgba(255,203,5,0.08); }
-  .hand-card.selected { border-color: var(--yellow); background: rgba(255,203,5,0.15); }
-  .hand-card.used { opacity: 0.35; cursor: default; text-decoration: line-through; }
-  .hand-card-text { font-size: 15px; font-weight: 700; }
-  .hand-card-icon { font-size: 18px; }
-
-  .money-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-  }
-  .money-chip {
-    background: rgba(255,255,255,0.06);
-    border-radius: 12px;
-    padding: 12px;
-    text-align: center;
-  }
-  .money-chip-label { font-size: 10px; color: rgba(255,255,255,0.5); margin-bottom: 4px; }
-  .money-chip-value { font-family: 'Zen Dots', sans-serif; font-size: 20px; }
-  .money-chip-value.gold { color: var(--yellow); }
-
-  /* ===== RESULT SCREEN ===== */
-  #screen-result { padding: 20px 16px; gap: 14px; }
-  .result-card {
-    border-radius: 16px;
-    padding: 14px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .result-card.match { background: rgba(0,200,100,0.12); border: 1.5px solid rgba(0,200,100,0.4); }
-  .result-card.no-match { background: rgba(227,53,13,0.12); border: 1.5px solid rgba(227,53,13,0.4); }
-  .result-player { font-weight: 700; font-size: 15px; }
-  .result-answer { font-size: 13px; color: rgba(255,255,255,0.6); margin-top: 2px; }
-  .result-badge {
-    font-size: 12px;
-    font-weight: 800;
-    padding: 4px 10px;
-    border-radius: 20px;
-  }
-  .match .result-badge { background: rgba(0,200,100,0.3); color: #00e87a; }
-  .no-match .result-badge { background: rgba(227,53,13,0.3); color: #ff6b4a; }
-
-  /* ===== SCOREBOARD ===== */
-  #screen-score { padding: 20px 16px; gap: 14px; }
-  .score-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 16px;
-    background: rgba(255,255,255,0.06);
-    border-radius: 14px;
-    border: 1px solid rgba(255,255,255,0.1);
-  }
-  .score-rank {
-    font-family: 'Zen Dots', sans-serif;
-    font-size: 20px;
-    width: 32px;
-    text-align: center;
-    flex-shrink: 0;
-  }
-  .score-row:first-child { border-color: var(--yellow); background: rgba(255,203,5,0.1); }
-  .score-row:first-child .score-rank { color: var(--yellow); }
-  .score-name { font-weight: 700; flex: 1; }
-  .score-amount { font-family: 'Zen Dots', sans-serif; font-size: 18px; color: var(--yellow); }
-
-  /* ===== WINNER ===== */
-  #screen-winner {
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 40px 20px;
-    gap: 24px;
-  }
-  .winner-name { font-family: 'Zen Dots', sans-serif; font-size: 32px; color: var(--yellow); }
-  .winner-amount { font-size: 48px; font-family: 'Zen Dots', sans-serif; color: white; }
-  .confetti-emoji { font-size: 48px; animation: bounce 1s infinite alternate; }
-  @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-12px); } }
-
-  /* ===== PLAYER HAND VIEW ===== */
-  #screen-view-hand { padding: 20px 16px; gap: 14px; }
-
-  .fade-in { animation: fadeIn 0.3s ease; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-
-  .info-text { font-size: 13px; color: rgba(255,255,255,0.5); text-align: center; line-height: 1.6; }
-  .divider { height: 1px; background: rgba(255,255,255,0.1); }
-  .spacer { flex: 1; }
-
-  .themes-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-  .theme-chip {
-    background: rgba(255,255,255,0.07);
-    border: 1.5px solid rgba(255,255,255,0.15);
-    border-radius: 12px;
-    padding: 12px;
-    text-align: center;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 700;
-    transition: all 0.15s;
-  }
-  .theme-chip:hover { border-color: var(--yellow); background: rgba(255,203,5,0.1); color: var(--yellow); }
-  .theme-chip.active { border-color: var(--yellow); background: rgba(255,203,5,0.15); color: var(--yellow); }
-
-  .warning { color: var(--red); font-size: 12px; text-align: center; }
+:root { --red:#E3350D;--yellow:#FFCB05;--dark:#1a1a2e;--white:#FAFAF7; }
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'M PLUS Rounded 1c',sans-serif;background:var(--dark);color:var(--white);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 20%,rgba(227,53,13,.15) 0%,transparent 50%),radial-gradient(ellipse at 80% 80%,rgba(0,58,112,.3) 0%,transparent 50%);pointer-events:none;z-index:0;}
+.screen{display:none;position:relative;z-index:1;}
+.screen.active{display:flex;flex-direction:column;min-height:100vh;}
+.header{background:var(--red);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:4px solid var(--yellow);flex-shrink:0;}
+.logo{font-family:'Zen Dots',sans-serif;font-size:18px;color:var(--yellow);}
+.badge{background:var(--yellow);color:var(--dark);font-size:11px;font-weight:800;padding:4px 10px;border-radius:20px;}
+.body{padding:20px 16px 80px;display:flex;flex-direction:column;gap:14px;flex:1;}
+.btn{padding:13px 20px;border-radius:14px;border:none;font-family:inherit;font-weight:800;font-size:15px;cursor:pointer;transition:transform .1s;width:100%;}
+.btn:active{transform:scale(.97);}
+.btn-primary{background:var(--yellow);color:var(--dark);}
+.btn-secondary{background:rgba(255,255,255,.1);color:white;border:1.5px solid rgba(255,255,255,.2);}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+/* inputは基本auto幅・コンパクト */
+input[type=text]{display:inline-block;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.2);border-radius:8px;padding:5px 9px;color:white;font-family:inherit;font-size:14px;outline:none;transition:border-color .2s;line-height:1.4;}
+input[type=text]:focus{border-color:var(--yellow);}
+input[type=text]::placeholder{color:rgba(255,255,255,.3);}
+input[type=text].fw{width:100%;display:block;}
+.card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:16px;}
+.section-title{font-size:11px;font-weight:800;color:var(--yellow);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;}
+.theme-box{background:var(--yellow);color:var(--dark);border-radius:20px;padding:18px;text-align:center;}
+.theme-label{font-size:11px;font-weight:800;letter-spacing:2px;opacity:.6;margin-bottom:6px;}
+.theme-text{font-family:'Zen Dots',sans-serif;font-size:18px;line-height:1.3;}
+.prize-row{display:flex;align-items:center;justify-content:space-between;background:rgba(255,203,5,.1);border:1.5px solid var(--yellow);border-radius:14px;padding:12px 16px;}
+.prize-label{font-size:12px;color:var(--yellow);font-weight:700;}
+.prize-amount{font-family:'Zen Dots',sans-serif;font-size:24px;color:var(--yellow);}
+.info-text{font-size:13px;color:rgba(255,255,255,.5);text-align:center;line-height:1.6;}
+.spacer{flex:1;}
+.divider{height:1px;background:rgba(255,255,255,.1);}
+.hand-card{display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.15);border-radius:12px;padding:11px 14px;cursor:pointer;transition:all .15s;user-select:none;}
+.hand-card:hover:not(.used){border-color:var(--yellow);background:rgba(255,203,5,.08);}
+.hand-card.selected{border-color:var(--yellow);background:rgba(255,203,5,.15);}
+.hand-card.used{opacity:.35;cursor:default;text-decoration:line-through;}
+.result-card{border-radius:14px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;}
+.result-card.match{background:rgba(0,200,100,.12);border:1.5px solid rgba(0,200,100,.4);}
+.result-card.no-match{background:rgba(227,53,13,.12);border:1.5px solid rgba(227,53,13,.4);}
+.result-badge{font-size:12px;font-weight:800;padding:4px 10px;border-radius:20px;}
+.match .result-badge{background:rgba(0,200,100,.3);color:#00e87a;}
+.no-match .result-badge{background:rgba(227,53,13,.3);color:#ff6b4a;}
+.score-row{display:flex;align-items:center;gap:12px;padding:12px 16px;background:rgba(255,255,255,.06);border-radius:14px;border:1px solid rgba(255,255,255,.1);}
+.score-row.first{border-color:var(--yellow);background:rgba(255,203,5,.1);}
+.score-rank{font-family:'Zen Dots',sans-serif;font-size:20px;width:28px;text-align:center;flex-shrink:0;}
+.first .score-rank{color:var(--yellow);}
+.player-chip{display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(255,255,255,.06);border-radius:12px;border:1px solid rgba(255,255,255,.1);}
+.themes-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.theme-chip{background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.15);border-radius:12px;padding:11px;text-align:center;cursor:pointer;font-size:13px;font-weight:700;transition:all .15s;}
+.theme-chip:hover{border-color:var(--yellow);background:rgba(255,203,5,.1);color:var(--yellow);}
+.theme-chip.active{border-color:var(--yellow);background:rgba(255,203,5,.15);color:var(--yellow);}
+.waiting-anim{font-size:32px;animation:spin 2s linear infinite;display:inline-block;}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.room-id-display{font-family:'Zen Dots',sans-serif;font-size:36px;letter-spacing:8px;color:var(--yellow);text-align:center;padding:14px;background:rgba(255,203,5,.1);border-radius:16px;border:2px dashed var(--yellow);}
+.money-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.money-chip{background:rgba(255,255,255,.06);border-radius:12px;padding:12px;text-align:center;}
+.money-chip-label{font-size:10px;color:rgba(255,255,255,.5);margin-bottom:4px;}
+.money-chip-value{font-family:'Zen Dots',sans-serif;font-size:20px;}
+.gold{color:var(--yellow);}
+.error-msg{color:#ff6b4a;font-size:13px;}
+.fade-in{animation:fadeIn .3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+/* 管理バー */
+.admin-bar{position:fixed;bottom:0;left:0;right:0;background:rgba(15,15,30,.97);border-top:2px solid rgba(255,255,255,.12);padding:8px 16px 14px;z-index:100;}
+.admin-bar-title{font-size:10px;color:rgba(255,255,255,.35);letter-spacing:1px;margin-bottom:6px;}
+.admin-players{display:flex;gap:6px;flex-wrap:wrap;}
+.admin-player{display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:20px;font-size:12px;font-weight:700;border:1.5px solid rgba(255,255,255,.12);white-space:nowrap;}
+.admin-player.online{border-color:#00e87a;background:rgba(0,232,122,.08);}
+.admin-player.offline{opacity:.4;}
+.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.online .dot{background:#00e87a;}
+.offline .dot{background:#666;}
+/* 提出状況バー */
+.submit-status{display:flex;flex-direction:column;gap:6px;}
+.submit-player-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:10px;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);}
+.submit-player-row.done{border-color:#00e87a;background:rgba(0,232,122,.08);}
+.submit-player-row.waiting{border-color:rgba(255,203,5,.4);background:rgba(255,203,5,.05);}
+.back-btn{background:none;border:none;color:var(--yellow);font-size:20px;cursor:pointer;padding:0 8px 0 0;line-height:1;}
 </style>
 </head>
 <body>
 
-<!-- ===== TITLE ===== -->
-<div id="screen-title" class="screen active">
-  <div class="pokeball-icon"></div>
-  <div>
-    <div class="title-main">ポケモン<br>ゲスクラブ</div>
-    <div class="title-sub">みんなと被れ！ポケモン心理戦</div>
-  </div>
-  <div style="width:100%;padding:0 8px;display:flex;flex-direction:column;gap:12px;">
-    <button class="btn btn-primary" onclick="showScreen('setup')">ゲームスタート</button>
-    <button class="btn btn-secondary" onclick="showRules()">ルール確認</button>
+<!-- TOP -->
+<div id="screen-top" class="screen active">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;gap:28px;text-align:center;">
+    <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(180deg,var(--red) 50%,white 50%);border:4px solid var(--dark);box-shadow:0 0 0 3px var(--yellow);position:relative;animation:spinIn .8s cubic-bezier(.34,1.56,.64,1) both;">
+      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:20px;height:20px;border-radius:50%;background:white;border:3px solid var(--dark);z-index:1;"></div>
+      <div style="position:absolute;top:calc(50% - 2px);left:0;right:0;height:4px;background:var(--dark);"></div>
+    </div>
+    @keyframes spinIn{from{transform:rotate(-180deg) scale(0);opacity:0}to{transform:rotate(0) scale(1);opacity:1}}
+    <div>
+      <div style="font-family:'Zen Dots',sans-serif;font-size:28px;color:var(--yellow);text-shadow:2px 2px 0 var(--red);">ポケモン<br>ゲスクラブ</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.5);margin-top:6px;">みんなと被れ！ポケモン心理戦</div>
+    </div>
+    <div style="width:100%;display:flex;flex-direction:column;gap:10px;">
+      <button class="btn btn-primary" onclick="showScreen('create')">🏠 部屋を作る</button>
+      <button class="btn btn-secondary" onclick="showScreen('join')">🚪 部屋に参加</button>
+    </div>
   </div>
 </div>
 
-<!-- ===== SETUP ===== -->
-<div id="screen-setup" class="screen">
+<!-- CREATE -->
+<div id="screen-create" class="screen">
   <div class="header">
+    <button class="back-btn" onclick="showScreen('top')">←</button>
     <div class="logo">GUESS CLUB</div>
-    <div class="round-badge">プレイヤー設定</div>
+    <div class="badge">部屋を作る</div>
   </div>
-  <div style="padding:20px 16px;display:flex;flex-direction:column;gap:16px;flex:1;">
-    <div>
-      <div class="section-title">プレイヤー（2〜6人）</div>
-      <div class="player-list" id="player-list"></div>
-      <button class="btn btn-secondary btn-sm" style="margin-top:10px;width:auto;" onclick="addPlayer()">＋ プレイヤー追加</button>
-    </div>
-    <div class="divider"></div>
-    <div>
-      <div class="section-title">ゲーム設定</div>
-      <div class="card" style="display:flex;flex-direction:column;gap:12px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-size:13px;">開始所持金</span>
-          <span style="font-family:'Zen Dots',sans-serif;color:var(--yellow);">$150</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-size:13px;">ラウンド数</span>
-          <span style="font-family:'Zen Dots',sans-serif;color:var(--yellow);">4</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-size:13px;">手札枚数</span>
-          <span style="font-family:'Zen Dots',sans-serif;color:var(--yellow);">6枚</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-size:13px;">ハズレペナルティ</span>
-          <span style="font-family:'Zen Dots',sans-serif;color:var(--red);">-$10</span>
-        </div>
-      </div>
-    </div>
+  <div class="body">
+    <div class="section-title">あなたの名前</div>
+    <input type="text" id="create-name" placeholder="名前…" maxlength="10">
+    <div id="create-error" class="error-msg"></div>
     <div class="spacer"></div>
-    <button class="btn btn-primary" onclick="startGame()" id="start-btn">ゲーム開始！</button>
+    <button class="btn btn-primary" onclick="createRoom()">部屋を作成する</button>
   </div>
 </div>
 
-<!-- ===== THEME ===== -->
+<!-- JOIN -->
+<div id="screen-join" class="screen">
+  <div class="header">
+    <button class="back-btn" onclick="showScreen('top')">←</button>
+    <div class="logo">GUESS CLUB</div>
+    <div class="badge">部屋に参加</div>
+  </div>
+  <div class="body">
+    <div class="section-title">あなたの名前</div>
+    <input type="text" id="join-name" placeholder="名前…" maxlength="10">
+    <div class="section-title" style="margin-top:8px;">ルームID</div>
+    <input type="text" id="join-room-id" placeholder="XXXXX" maxlength="5" style="font-family:'Zen Dots',sans-serif;font-size:18px;letter-spacing:4px;text-align:center;text-transform:uppercase;width:130px;">
+    <div id="join-error" class="error-msg"></div>
+    <div class="spacer"></div>
+    <button class="btn btn-primary" onclick="joinRoom()">参加する</button>
+  </div>
+</div>
+
+<!-- LOBBY -->
+<div id="screen-lobby" class="screen">
+  <div class="header"><div class="logo">GUESS CLUB</div><div class="badge">ロビー</div></div>
+  <div class="body">
+    <div class="section-title">ルームID（シェアしてね）</div>
+    <div class="room-id-display" id="lobby-room-id">-----</div>
+    <div class="section-title">参加中</div>
+    <div id="lobby-players" style="display:flex;flex-direction:column;gap:8px;"></div>
+    <div class="spacer"></div>
+    <div id="lobby-host-area" style="display:none;">
+      <button class="btn btn-primary" onclick="startGame()" id="start-game-btn">ゲーム開始！</button>
+    </div>
+    <p class="info-text" id="lobby-wait-text">ホストがゲームを開始するまでお待ちください</p>
+  </div>
+  <div class="admin-bar"><div class="admin-bar-title">ONLINE</div><div class="admin-players" id="admin-lobby"></div></div>
+</div>
+
+<!-- THEME SELECT -->
 <div id="screen-theme" class="screen">
-  <div class="header">
-    <div class="logo">GUESS CLUB</div>
-    <div class="round-badge" id="theme-round-badge">ラウンド 1/4</div>
-  </div>
-  <div style="padding:20px 16px;display:flex;flex-direction:column;gap:16px;flex:1;">
-    <div class="theme-display">
-      <div class="theme-label">お題</div>
-      <div class="theme-text" id="theme-text">ほのおタイプのポケモン</div>
+  <div class="header"><div class="logo">GUESS CLUB</div><div class="badge" id="theme-badge">ラウンド1/4</div></div>
+  <div class="body">
+    <div class="theme-box">
+      <div class="theme-label">選択中のお題</div>
+      <div class="theme-text" id="theme-selected-text">選んでください</div>
     </div>
-    <div>
-      <div class="section-title">お題を選ぶ</div>
-      <div class="themes-grid" id="themes-grid"></div>
+    <div class="section-title">✏️ お題を自分で作る</div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input type="text" id="custom-theme-input" placeholder="例：赤いポケモン" maxlength="30" class="fw">
+      <button onclick="applyCustomTheme()" style="flex-shrink:0;padding:7px 14px;border-radius:8px;border:none;background:var(--yellow);color:var(--dark);font-family:inherit;font-weight:800;font-size:13px;cursor:pointer;">決定</button>
     </div>
-    <div class="prize-pool-display">
-      <div>
-        <div class="prize-label">💰 賞金プール</div>
-        <div style="font-size:11px;color:rgba(255,203,5,0.6);margin-top:2px;">被った枚数 × $10</div>
-      </div>
-      <div class="prize-amount" id="prize-display">$0</div>
+    <div class="section-title">📋 サンプルから選ぶ</div>
+    <div class="themes-grid" id="themes-grid"></div>
+    <div class="prize-row">
+      <div><div class="prize-label">💰 賞金プール</div></div>
+      <div class="prize-amount" id="theme-prize">$0</div>
     </div>
-    <p class="info-text">全員がこのお題に対して答えを6枚考えます<br>手番で誰かと被れば賞金ゲット！</p>
     <div class="spacer"></div>
-    <button class="btn btn-primary" onclick="startHandInput()">このお題で進む</button>
+    <button class="btn btn-primary" onclick="selectTheme()" id="select-theme-btn" disabled>このお題で進む</button>
   </div>
+  <div class="admin-bar"><div class="admin-bar-title">ONLINE</div><div class="admin-players" id="admin-theme"></div></div>
 </div>
 
-<!-- ===== HAND INPUT ===== -->
-<div id="screen-hand" class="screen">
-  <div class="header">
-    <div class="logo">GUESS CLUB</div>
-    <div class="round-badge" id="hand-round-badge">ラウンド 1/4</div>
-  </div>
-  <div style="padding:20px 16px;display:flex;flex-direction:column;gap:14px;flex:1;">
-    <div class="player-turn-header">
-      <div class="player-avatar" id="hand-avatar" style="background:#E3350D20;border-color:#E3350D;font-size:20px;">🎮</div>
-      <div>
-        <div style="font-size:12px;color:rgba(255,255,255,0.5);">手札入力中</div>
-        <div style="font-size:18px;font-weight:800;" id="hand-player-name">プレイヤー1</div>
-      </div>
+<!-- THEME WAIT -->
+<div id="screen-theme-wait" class="screen">
+  <div class="header"><div class="logo">GUESS CLUB</div><div class="badge" id="theme-wait-badge">ラウンド1/4</div></div>
+  <div class="body" style="align-items:center;justify-content:center;text-align:center;gap:20px;">
+    <div class="waiting-anim">⚡</div>
+    <div style="font-size:17px;font-weight:800;">ホストがお題を選んでいます</div>
+    <div class="prize-row" style="width:100%;">
+      <div><div class="prize-label">💰 賞金プール</div></div>
+      <div class="prize-amount" id="theme-wait-prize">$0</div>
     </div>
-    <div class="theme-display" style="padding:12px 16px;">
+  </div>
+  <div class="admin-bar"><div class="admin-bar-title">ONLINE</div><div class="admin-players" id="admin-theme-wait"></div></div>
+</div>
+
+<!-- HAND INPUT -->
+<div id="screen-hand-input" class="screen">
+  <div class="header"><div class="logo">GUESS CLUB</div><div class="badge">手札入力</div></div>
+  <div class="body">
+    <div class="theme-box">
       <div class="theme-label">お題</div>
-      <div class="theme-text" style="font-size:16px;" id="hand-theme-text"></div>
+      <div class="theme-text" id="hand-input-theme"></div>
     </div>
     <div class="section-title">6枚の答えを入力（他の人に見せないで！）</div>
-    <div class="card-slots" id="card-slots"></div>
+    <div id="hand-input-slots" style="display:flex;flex-direction:column;gap:8px;"></div>
     <div class="spacer"></div>
-    <button class="btn btn-primary" onclick="submitHand()" id="submit-hand-btn">完了して次のプレイヤーへ</button>
-    <p class="info-text" id="hand-progress-text"></p>
+    <div id="submit-status-area">
+      <div class="section-title">提出状況</div>
+      <div class="submit-status" id="submit-status-list"></div>
+    </div>
+    <button class="btn btn-primary" onclick="submitHand()" id="submit-hand-btn" style="margin-top:12px;">提出する！</button>
+    <p class="info-text" id="hand-submitted-msg" style="display:none;">✅ 提出済み！全員の提出を待っています</p>
   </div>
+  <div class="admin-bar"><div class="admin-bar-title">ONLINE</div><div class="admin-players" id="admin-hand"></div></div>
 </div>
 
-<!-- ===== PLAY ===== -->
+<!-- PLAY -->
 <div id="screen-play" class="screen">
-  <div class="header">
-    <div class="logo">GUESS CLUB</div>
-    <div class="round-badge" id="play-round-badge">ラウンド 1/4</div>
-  </div>
-  <div style="padding:20px 16px;display:flex;flex-direction:column;gap:14px;flex:1;">
-    <div class="current-player-card" id="current-player-card">
-      <div class="current-player-label">🎲 手番</div>
-      <div class="current-player-name" id="play-player-name">プレイヤー1</div>
-      <div class="current-player-money" id="play-player-money">$150</div>
+  <div class="header"><div class="logo">GUESS CLUB</div><div class="badge" id="play-badge">ラウンド1/4</div></div>
+  <div class="body">
+    <div id="play-current-player" style="border-radius:16px;padding:14px;text-align:center;">
+      <div style="font-size:11px;opacity:.7;letter-spacing:1px;">🎲 手番</div>
+      <div style="font-size:20px;font-weight:800;" id="play-player-name"></div>
+      <div style="font-family:'Zen Dots',sans-serif;font-size:13px;opacity:.8;margin-top:2px;" id="play-player-money"></div>
     </div>
-    <div class="money-row">
-      <div class="money-chip">
-        <div class="money-chip-label">💰 賞金プール</div>
-        <div class="money-chip-value gold" id="play-prize">$0</div>
-      </div>
-      <div class="money-chip">
-        <div class="money-chip-label">🃏 残り手札</div>
-        <div class="money-chip-value" id="play-cards-left">6枚</div>
-      </div>
+    <div class="money-grid">
+      <div class="money-chip"><div class="money-chip-label">💰 賞金プール</div><div class="money-chip-value gold" id="play-prize"></div></div>
+      <div class="money-chip"><div class="money-chip-label">🃏 残り手札</div><div class="money-chip-value" id="play-cards-left"></div></div>
     </div>
-    <div class="theme-display" style="padding:10px 16px;">
+    <div class="theme-box" style="padding:10px 16px;">
       <div class="theme-label">お題</div>
-      <div class="theme-text" style="font-size:15px;" id="play-theme-text"></div>
+      <div class="theme-text" style="font-size:15px;" id="play-theme"></div>
     </div>
-    <div class="section-title">出すカードを選択</div>
-    <div class="hand-cards" id="play-hand-cards"></div>
-    <div class="spacer"></div>
-    <button class="btn btn-primary" onclick="playCard()" id="play-card-btn" disabled>このカードを出す</button>
+    <div id="play-my-turn-area" style="display:none;">
+      <div class="section-title">あなたの手番！カードを選択</div>
+      <div id="play-hand-cards" style="display:flex;flex-direction:column;gap:8px;"></div>
+      <button class="btn btn-primary" onclick="playCard()" id="play-card-btn" disabled style="margin-top:12px;">このカードを出す</button>
+    </div>
+    <div id="play-wait-area">
+      <div style="text-align:center;padding:16px 0;">
+        <div class="waiting-anim">⏳</div>
+        <div style="margin-top:8px;font-size:14px;" id="play-wait-text"></div>
+      </div>
+    </div>
   </div>
+  <div class="admin-bar"><div class="admin-bar-title">ONLINE</div><div class="admin-players" id="admin-play"></div></div>
 </div>
 
-<!-- ===== RESULT ===== -->
+<!-- RESULT -->
 <div id="screen-result" class="screen">
-  <div class="header">
-    <div class="logo">GUESS CLUB</div>
-    <div class="round-badge" id="result-round-badge">ラウンド 1/4</div>
-  </div>
-  <div style="padding:20px 16px;display:flex;flex-direction:column;gap:14px;flex:1;">
+  <div class="header"><div class="logo">GUESS CLUB</div><div class="badge" id="result-badge">ラウンド1/4</div></div>
+  <div class="body">
     <div style="text-align:center;">
-      <div id="result-emoji" style="font-size:40px;margin-bottom:8px;">🎯</div>
-      <div id="result-title" style="font-size:20px;font-weight:800;">結果発表！</div>
-      <div id="result-prize-change" style="font-family:'Zen Dots',sans-serif;font-size:16px;margin-top:4px;"></div>
+      <div style="font-size:40px;margin-bottom:8px;" id="result-emoji">🎯</div>
+      <div style="font-size:20px;font-weight:800;" id="result-title"></div>
+      <div style="font-family:'Zen Dots',sans-serif;font-size:15px;margin-top:4px;" id="result-change"></div>
     </div>
-    <div id="result-played-card" class="card" style="text-align:center;">
-      <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:4px;">出したカード</div>
-      <div id="result-card-text" style="font-size:22px;font-weight:800;"></div>
+    <div class="card" style="text-align:center;">
+      <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:4px;">出したカード</div>
+      <div style="font-size:22px;font-weight:800;" id="result-card"></div>
     </div>
-    <div class="section-title">全員の結果</div>
+    <div class="section-title">マッチ結果</div>
     <div id="result-list" style="display:flex;flex-direction:column;gap:8px;"></div>
     <div class="spacer"></div>
-    <button class="btn btn-primary" onclick="nextTurn()" id="next-turn-btn">次のターンへ</button>
+    <div id="result-host-btn" style="display:none;">
+      <button class="btn btn-primary" id="next-turn-btn">次のターンへ</button>
+    </div>
+    <p class="info-text" id="result-wait-text" style="display:none;">ホストが次のターンに進めます</p>
   </div>
+  <div class="admin-bar"><div class="admin-bar-title">ONLINE</div><div class="admin-players" id="admin-result"></div></div>
 </div>
 
-<!-- ===== SCOREBOARD ===== -->
-<div id="screen-score" class="screen">
-  <div class="header">
-    <div class="logo">GUESS CLUB</div>
-    <div class="round-badge" id="score-round-badge">ラウンド終了</div>
-  </div>
-  <div style="padding:20px 16px;display:flex;flex-direction:column;gap:14px;flex:1;">
-    <div style="text-align:center;">
-      <div style="font-size:28px;margin-bottom:4px;">🏆</div>
-      <div style="font-size:18px;font-weight:800;" id="score-title">ラウンド 1 終了！</div>
-    </div>
-    <div id="score-list" style="display:flex;flex-direction:column;gap:8px;"></div>
-    <div class="prize-pool-display" id="score-prize-pool">
-      <div>
-        <div class="prize-label">持ち越し賞金</div>
-      </div>
-      <div class="prize-amount" id="score-prize-amount">$0</div>
-    </div>
+<!-- ROUND END -->
+<div id="screen-round-end" class="screen">
+  <div class="header"><div class="logo">GUESS CLUB</div><div class="badge" id="round-end-badge">ラウンド終了</div></div>
+  <div class="body">
+    <div style="text-align:center;"><div style="font-size:28px;margin-bottom:6px;">🏆</div><div style="font-size:18px;font-weight:800;" id="round-end-title"></div></div>
+    <div id="round-end-scores" style="display:flex;flex-direction:column;gap:8px;"></div>
+    <div class="prize-row"><div><div class="prize-label">持ち越し賞金</div></div><div class="prize-amount" id="round-end-prize"></div></div>
     <div class="spacer"></div>
-    <button class="btn btn-primary" onclick="nextRound()" id="next-round-btn">次のラウンドへ</button>
+    <div id="round-end-host-btn" style="display:none;">
+      <button class="btn btn-primary" id="next-round-btn">次のラウンドへ</button>
+    </div>
+    <p class="info-text" id="round-end-wait-text" style="display:none;">ホストが次のラウンドに進めます</p>
   </div>
+  <div class="admin-bar"><div class="admin-bar-title">ONLINE</div><div class="admin-players" id="admin-round-end"></div></div>
 </div>
 
-<!-- ===== WINNER ===== -->
-<div id="screen-winner" class="screen">
-  <div class="confetti-emoji">🎊</div>
-  <div>
-    <div style="font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:8px;">優勝者</div>
-    <div class="winner-name" id="winner-name">プレイヤー1</div>
-  </div>
-  <div>
-    <div style="font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:4px;">最終所持金</div>
-    <div class="winner-amount" id="winner-amount">$250</div>
-  </div>
-  <div style="width:100%;padding:0 8px;display:flex;flex-direction:column;gap:10px;">
+<!-- GAME END -->
+<div id="screen-game-end" class="screen">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;gap:24px;text-align:center;">
+    <div style="font-size:48px;animation:bounce 1s infinite alternate;">🎊</div>
+    <div>
+      <div style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:6px;">優勝者</div>
+      <div style="font-family:'Zen Dots',sans-serif;font-size:28px;color:var(--yellow);" id="winner-name"></div>
+    </div>
+    <div>
+      <div style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:4px;">最終所持金</div>
+      <div style="font-family:'Zen Dots',sans-serif;font-size:44px;" id="winner-amount"></div>
+    </div>
     <div id="final-scores" style="display:flex;flex-direction:column;gap:8px;width:100%;"></div>
-    <button class="btn btn-primary" onclick="location.reload()">もう一度プレイ</button>
+    <button class="btn btn-primary" onclick="clearSession();location.reload();">もう一度プレイ</button>
   </div>
 </div>
+<style>@keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-12px)}}</style>
 
 <script>
-const AVATARS = ['🔥','💧','🌿','⚡','🌙','🌟','🐉','👻','🌊','🍃'];
-const AVATAR_COLORS = ['#E3350D','#3B82F6','#22C55E','#EAB308','#8B5CF6','#EC4899','#F97316','#6366F1','#06B6D4','#10B981'];
+const THEMES=['ほのおタイプ','みずタイプ','でんきタイプ','くさタイプ','こおりタイプ','かくとうタイプ','どくタイプ','じめんタイプ','ひこうタイプ','エスパータイプ','むしタイプ','いわタイプ','ゴーストタイプ','ドラゴンタイプ','あくタイプ','はがねタイプ','フェアリータイプ','かわいいポケモン','こわいポケモン','強そうなポケモン','かっこいいポケモン','伝説のポケモン','進化しないポケモン','最終進化形のポケモン','第1世代のポケモン','第2世代のポケモン','第5世代のポケモン','空を飛べるポケモン','人気の高いポケモン','主人公が使ったポケモン','ロケット団のポケモン','ジムリーダーが使うポケモン'];
 
-const THEMES = [
-  'ほのおタイプ','みずタイプ','でんきタイプ','くさタイプ','こおりタイプ',
-  'かくとうタイプ','どくタイプ','じめんタイプ','ひこうタイプ','エスパータイプ',
-  'むしタイプ','いわタイプ','ゴーストタイプ','ドラゴンタイプ','あくタイプ',
-  'はがねタイプ','フェアリータイプ',
-  'かわいいポケモン','こわいポケモン','強そうなポケモン','かっこいいポケモン',
-  '伝説のポケモン','進化しないポケモン','最終進化形のポケモン',
-  '第1世代のポケモン','第2世代のポケモン','第5世代のポケモン',
-  '空を飛べるポケモン','水中で戦えるポケモン','人気の高いポケモン',
-  '主人公が使ったポケモン','ロケット団のポケモン','ジムリーダーが使うポケモン',
-];
+let ws=null,myName='',myRoomId='',isHost=false,gameState=null;
+let selectedCardIndex=null,selectedTheme='',myHand=[],myUsedCards=[];
+let reconnectTimer=null,hasSubmittedHand=false;
 
-let game = {
-  players: [],
-  currentRound: 1,
-  totalRounds: 4,
-  startMoney: 150,
-  handSize: 6,
-  penalty: 10,
-  prizePool: 0,
-  currentTheme: '',
-  currentPlayerIndex: 0,
-  turnOrder: [],
-  hands: {},
-  usedCards: {},
-  roundStartPlayerIndex: 0,
-};
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+}
+function saveSession(){localStorage.setItem('gc_name',myName);localStorage.setItem('gc_roomId',myRoomId);}
+function clearSession(){localStorage.removeItem('gc_name');localStorage.removeItem('gc_roomId');}
 
-let selectedCard = null;
-let selectedTheme = '';
-let handInputPlayerIndex = 0;
-let tempHands = {};
+function connectWS(cb){
+  const proto=location.protocol==='https:'?'wss':'ws';
+  ws=new WebSocket(`${proto}://${location.host}`);
+  ws.onopen=cb;
+  ws.onmessage=e=>handleMessage(JSON.parse(e.data));
+  ws.onerror=()=>{};
+  ws.onclose=()=>{
+    if(!myName||!myRoomId)return;
+    reconnectTimer=setTimeout(attemptReconnect,5000);
+  };
+}
+function attemptReconnect(){
+  if(!myName||!myRoomId)return;
+  const proto=location.protocol==='https:'?'wss':'ws';
+  ws=new WebSocket(`${proto}://${location.host}`);
+  ws.onopen=()=>send({type:'join_room',name:myName,roomId:myRoomId});
+  ws.onmessage=e=>handleMessage(JSON.parse(e.data));
+  ws.onerror=()=>{};
+  ws.onclose=()=>{reconnectTimer=setTimeout(attemptReconnect,5000);};
+}
+function send(data){if(ws&&ws.readyState===WebSocket.OPEN)ws.send(JSON.stringify(data));}
 
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById('screen-' + id).classList.add('active');
-  document.getElementById('screen-' + id).classList.add('fade-in');
+function createRoom(){
+  const name=document.getElementById('create-name').value.trim();
+  if(!name){document.getElementById('create-error').textContent='名前を入力してください';return;}
+  myName=name;isHost=true;
+  connectWS(()=>send({type:'create_room',name}));
+}
+function joinRoom(){
+  const name=document.getElementById('join-name').value.trim();
+  const roomId=document.getElementById('join-room-id').value.trim().toUpperCase();
+  if(!name){document.getElementById('join-error').textContent='名前を入力してください';return;}
+  if(roomId.length!==5){document.getElementById('join-error').textContent='ルームIDは5文字です';return;}
+  myName=name;myRoomId=roomId;
+  connectWS(()=>send({type:'join_room',name,roomId}));
 }
 
-function showRules() {
-  alert(
-    '【ゲスクラブ ルール】\n\n' +
-    '① 全員$150でスタート\n' +
-    '② お題が発表 → 各自スマホで6枚の答えを入力\n' +
-    '③ 手番で手札から1枚出す\n' +
-    '④ 誰かと答えが一致 → 被った人数×$10を獲得\n' +
-    '⑤ 誰とも被らない → $10没収＋賞金プールに加算\n' +
-    '⑥ 誰かの手札が0枚になったらラウンド終了\n' +
-    '⑦ 全4ラウンドで最終所持金が一番多い人の勝ち！'
-  );
+window.addEventListener('load',()=>{
+  const n=localStorage.getItem('gc_name');
+  const r=localStorage.getItem('gc_roomId');
+  if(n&&r){myName=n;myRoomId=r;attemptReconnect();}
+});
+
+function handleMessage(msg){
+  if(msg.type==='room_created'){myRoomId=msg.roomId;saveSession();showScreen('lobby');document.getElementById('lobby-room-id').textContent=myRoomId;}
+  else if(msg.type==='joined'){myRoomId=msg.roomId;saveSession();showScreen('lobby');document.getElementById('lobby-room-id').textContent=myRoomId;}
+  else if(msg.type==='rejoined'){if(reconnectTimer){clearTimeout(reconnectTimer);reconnectTimer=null;}}
+  else if(msg.type==='restore_hand'){myHand=msg.hand;myUsedCards=msg.usedCards;if(myHand.length>0)hasSubmittedHand=true;}
+  else if(msg.type==='error'){clearSession();myName='';myRoomId='';alert(msg.message);showScreen('top');}
+  else if(msg.type==='state'){gameState=msg;renderState(msg);}
+  else if(msg.type==='your_turn_input'){
+    document.getElementById('hand-input-theme').textContent=msg.theme;
+    hasSubmittedHand=false;
+    renderHandInputSlots();
+    showScreen('hand-input');
+  }
 }
 
-// Setup
-function renderSetup() {
-  const list = document.getElementById('player-list');
-  list.innerHTML = '';
-  game.players.forEach((p, i) => {
-    const row = document.createElement('div');
-    row.className = 'player-row';
-    row.innerHTML = `
-      <div class="player-avatar" style="background:${AVATAR_COLORS[i]}22;border-color:${AVATAR_COLORS[i]}">${AVATARS[i]}</div>
-      <input type="text" placeholder="プレイヤー${i+1}の名前" value="${p.name}" oninput="game.players[${i}].name=this.value;updateStartBtn()">
-      <button class="remove-btn" onclick="removePlayer(${i})">×</button>
-    `;
-    list.appendChild(row);
+// 管理バーを全画面で更新
+function renderAdminBar(players,suffix){
+  const el=document.getElementById('admin-'+suffix);
+  if(!el||!players)return;
+  el.innerHTML='';
+  players.forEach(p=>{
+    const div=document.createElement('div');
+    div.className='admin-player '+(p.online?'online':'offline');
+    div.innerHTML=`<span class="dot"></span><span>${p.avatar}${p.name}</span>`;
+    el.appendChild(div);
   });
-  updateStartBtn();
 }
 
-function addPlayer() {
-  if (game.players.length >= 6) return;
-  game.players.push({ name: '', money: 150 });
-  renderSetup();
+function renderState(state){
+  const myPlayer=state.players.find(p=>p.name===myName);
+  if(myPlayer)isHost=myPlayer.isHost;
+
+  if(state.phase==='lobby'){renderLobby(state);}
+  else if(state.phase==='theme_select'){isHost?renderThemeSelect(state):renderThemeWait(state);}
+  else if(state.phase==='hand_input'){renderHandInput(state);}
+  else if(state.phase==='play'){renderPlay(state);}
+  else if(state.phase==='result'){renderResult(state);}
+  else if(state.phase==='round_end'){renderRoundEnd(state);}
+  else if(state.phase==='game_end'){renderGameEnd(state);}
 }
 
-function removePlayer(i) {
-  if (game.players.length <= 2) return;
-  game.players.splice(i, 1);
-  renderSetup();
-}
-
-function updateStartBtn() {
-  const btn = document.getElementById('start-btn');
-  const valid = game.players.length >= 2 && game.players.every(p => p.name.trim());
-  btn.disabled = !valid;
-}
-
-function startGame() {
-  game.players.forEach((p, i) => {
-    p.name = p.name.trim();
-    p.money = game.startMoney;
-    p.color = AVATAR_COLORS[i];
-    p.avatar = AVATARS[i];
-    game.hands[p.name] = [];
-    game.usedCards[p.name] = [];
+function renderLobby(state){
+  showScreen('lobby');
+  document.getElementById('lobby-room-id').textContent=myRoomId;
+  const list=document.getElementById('lobby-players');
+  list.innerHTML='';
+  state.players.forEach(p=>{
+    const div=document.createElement('div');
+    div.className='player-chip';
+    div.innerHTML=`<span style="font-size:18px;">${p.avatar}</span><span style="font-weight:700;">${p.name}</span>${p.isHost?'<span style="margin-left:auto;font-size:11px;color:var(--yellow);font-weight:800;">HOST</span>':''}`;
+    list.appendChild(div);
   });
-  game.currentRound = 1;
-  game.prizePool = 0;
-  game.turnOrder = [...game.players.map(p => p.name)];
-  game.currentPlayerIndex = 0;
-  showThemeScreen();
+  if(isHost){document.getElementById('lobby-host-area').style.display='block';document.getElementById('lobby-wait-text').style.display='none';document.getElementById('start-game-btn').disabled=state.players.length<2;}
+  else{document.getElementById('lobby-host-area').style.display='none';document.getElementById('lobby-wait-text').style.display='block';}
+  renderAdminBar(state.players,'lobby');
 }
 
-// Theme
-function showThemeScreen() {
+let themeOptions=[];
+function renderThemeSelect(state){
   showScreen('theme');
-  document.getElementById('theme-round-badge').textContent = `ラウンド ${game.currentRound}/4`;
-  document.getElementById('prize-display').textContent = `$${game.prizePool}`;
-  selectedTheme = '';
-
-  // Pick 8 random themes
-  const shuffled = [...THEMES].sort(() => Math.random() - 0.5).slice(0, 8);
-  const grid = document.getElementById('themes-grid');
-  grid.innerHTML = '';
-  shuffled.forEach(t => {
-    const chip = document.createElement('div');
-    chip.className = 'theme-chip';
-    chip.textContent = t;
-    chip.onclick = () => {
-      document.querySelectorAll('.theme-chip').forEach(c => c.classList.remove('active'));
+  document.getElementById('theme-badge').textContent=`ラウンド${state.currentRound}/4`;
+  document.getElementById('theme-prize').textContent=`$${state.prizePool}`;
+  selectedTheme='';
+  document.getElementById('theme-selected-text').textContent='選んでください';
+  document.getElementById('select-theme-btn').disabled=true;
+  document.getElementById('custom-theme-input').value='';
+  themeOptions=[...THEMES].sort(()=>Math.random()-.5).slice(0,8);
+  const grid=document.getElementById('themes-grid');
+  grid.innerHTML='';
+  themeOptions.forEach(t=>{
+    const chip=document.createElement('div');
+    chip.className='theme-chip';
+    chip.textContent=t;
+    chip.onclick=()=>{
+      document.querySelectorAll('.theme-chip').forEach(c=>c.classList.remove('active'));
       chip.classList.add('active');
-      selectedTheme = t;
-      document.getElementById('theme-text').textContent = t;
+      selectedTheme=t;
+      document.getElementById('theme-selected-text').textContent=t;
+      document.getElementById('select-theme-btn').disabled=false;
+      document.getElementById('custom-theme-input').value='';
     };
     grid.appendChild(chip);
   });
-  document.getElementById('theme-text').textContent = 'お題を選んでください';
+  renderAdminBar(state.players,'theme');
 }
 
-function startHandInput() {
-  if (!selectedTheme) { alert('お題を選んでください'); return; }
-  game.currentTheme = selectedTheme;
-  handInputPlayerIndex = 0;
-  tempHands = {};
-  game.players.forEach(p => { tempHands[p.name] = []; });
-  showHandInput();
+function applyCustomTheme(){
+  const val=document.getElementById('custom-theme-input').value.trim();
+  if(!val)return;
+  selectedTheme=val;
+  document.getElementById('theme-selected-text').textContent=val;
+  document.getElementById('select-theme-btn').disabled=false;
+  document.querySelectorAll('.theme-chip').forEach(c=>c.classList.remove('active'));
 }
 
-// Hand Input
-function showHandInput() {
-  if (handInputPlayerIndex >= game.players.length) {
-    finishHandInput();
-    return;
-  }
-  const p = game.players[handInputPlayerIndex];
-  showScreen('hand');
-  document.getElementById('hand-round-badge').textContent = `ラウンド ${game.currentRound}/4`;
-  document.getElementById('hand-avatar').textContent = p.avatar;
-  document.getElementById('hand-avatar').style.borderColor = p.color;
-  document.getElementById('hand-player-name').textContent = p.name;
-  document.getElementById('hand-theme-text').textContent = game.currentTheme;
-  document.getElementById('hand-progress-text').textContent = `${handInputPlayerIndex + 1} / ${game.players.length} 人目`;
-
-  const slots = document.getElementById('card-slots');
-  slots.innerHTML = '';
-  for (let i = 0; i < game.handSize; i++) {
-    const slot = document.createElement('div');
-    slot.className = 'card-slot';
-    slot.innerHTML = `
-      <div class="card-num">${i+1}</div>
-      <input type="text" placeholder="ポケモン名を入力…" id="card-input-${i}" autocomplete="off" autocorrect="off">
-    `;
-    slots.appendChild(slot);
-  }
-  document.getElementById('submit-hand-btn').textContent =
-    handInputPlayerIndex < game.players.length - 1 ? `完了 → 次: ${game.players[handInputPlayerIndex+1].name}` : '全員完了！ゲームスタート';
+function renderThemeWait(state){
+  showScreen('theme-wait');
+  document.getElementById('theme-wait-badge').textContent=`ラウンド${state.currentRound}/4`;
+  document.getElementById('theme-wait-prize').textContent=`$${state.prizePool}`;
+  renderAdminBar(state.players,'theme-wait');
 }
 
-function submitHand() {
-  const p = game.players[handInputPlayerIndex];
-  const cards = [];
-  for (let i = 0; i < game.handSize; i++) {
-    const val = document.getElementById(`card-input-${i}`).value.trim();
-    if (!val) { alert('6枚すべて入力してください'); return; }
-    cards.push(val);
-  }
-  tempHands[p.name] = cards;
-  game.hands[p.name] = [...cards];
-  game.usedCards[p.name] = [];
-  handInputPlayerIndex++;
-  showHandInput();
-}
-
-function finishHandInput() {
-  game.currentPlayerIndex = 0;
-  showPlayScreen();
-}
-
-// Play
-function showPlayScreen() {
-  const pName = game.turnOrder[game.currentPlayerIndex];
-  const p = game.players.find(x => x.name === pName);
-  showScreen('play');
-  document.getElementById('play-round-badge').textContent = `ラウンド ${game.currentRound}/4`;
-  document.getElementById('play-player-name').textContent = p.name;
-  document.getElementById('play-player-money').textContent = `$${p.money}`;
-  document.getElementById('play-prize').textContent = `$${game.prizePool}`;
-  document.getElementById('play-theme-text').textContent = game.currentTheme;
-  document.getElementById('current-player-card').style.background = p.color || '#E3350D';
-
-  const remaining = game.hands[pName].filter((_, i) => !game.usedCards[pName].includes(i));
-  document.getElementById('play-cards-left').textContent = `${remaining.length}枚`;
-
-  selectedCard = null;
-  document.getElementById('play-card-btn').disabled = true;
-
-  const handDiv = document.getElementById('play-hand-cards');
-  handDiv.innerHTML = '';
-  game.hands[pName].forEach((card, i) => {
-    const isUsed = game.usedCards[pName].includes(i);
-    const div = document.createElement('div');
-    div.className = 'hand-card' + (isUsed ? ' used' : '');
-    div.innerHTML = `<span class="hand-card-text">${card}</span><span class="hand-card-icon">${isUsed ? '✓' : '🃏'}</span>`;
-    if (!isUsed) {
-      div.onclick = () => {
-        document.querySelectorAll('.hand-card:not(.used)').forEach(c => c.classList.remove('selected'));
-        div.classList.add('selected');
-        selectedCard = { index: i, value: card };
-        document.getElementById('play-card-btn').disabled = false;
-      };
-    }
-    handDiv.appendChild(div);
-  });
-}
-
-function playCard() {
-  if (!selectedCard) return;
-  const pName = game.turnOrder[game.currentPlayerIndex];
-  const playedValue = selectedCard.value.trim().toLowerCase().replace(/[　\s]/g, '');
-  game.usedCards[pName].push(selectedCard.index);
-
-  // Check matches
-  let matchCount = 0;
-  const results = [];
-  game.players.forEach(op => {
-    if (op.name === pName) return;
-    const opRemaining = game.hands[op.name].filter((_, i) => !game.usedCards[op.name].includes(i));
-    let matched = false;
-    opRemaining.forEach((card, localI) => {
-      const cardNorm = card.trim().toLowerCase().replace(/[　\s]/g, '');
-      if (cardNorm === playedValue) {
-        matched = true;
-        // Mark that card as used for the opponent
-        const globalI = game.hands[op.name].indexOf(card);
-        if (!game.usedCards[op.name].includes(globalI)) {
-          game.usedCards[op.name].push(globalI);
-        }
-      }
-    });
-    if (matched) {
-      matchCount++;
-      results.push({ name: op.name, matched: true, avatar: op.avatar });
+// 手札入力：一斉入力モード
+function renderHandInput(state){
+  // 自分がまだ提出していない→hand-input画面を表示
+  if(!hasSubmittedHand){
+    document.getElementById('hand-input-theme').textContent=state.currentTheme;
+    if(document.getElementById('screen-hand-input').classList.contains('active')){
+      // すでに入力画面にいる場合は提出状況だけ更新
     } else {
-      results.push({ name: op.name, matched: false, avatar: op.avatar });
+      renderHandInputSlots();
+      showScreen('hand-input');
     }
-  });
-
-  // Money
-  const p = game.players.find(x => x.name === pName);
-  let prizeChange = 0;
-  if (matchCount > 0) {
-    const earned = matchCount * 10 + game.prizePool;
-    p.money += earned;
-    prizeChange = earned;
-    game.prizePool = 0;
   } else {
-    p.money -= game.penalty;
-    game.prizePool += game.penalty;
-    prizeChange = -game.penalty;
+    // 提出済み→同じ画面にいるが提出済みメッセージ表示
+    showScreen('hand-input');
+    document.getElementById('hand-input-theme').textContent=state.currentTheme;
+    document.getElementById('submit-hand-btn').style.display='none';
+    document.getElementById('hand-submitted-msg').style.display='block';
   }
-
-  showResultScreen(pName, selectedCard.value, results, prizeChange, matchCount);
+  // 提出状況を更新
+  const statusList=document.getElementById('submit-status-list');
+  statusList.innerHTML='';
+  state.players.forEach(p=>{
+    const row=document.createElement('div');
+    row.className='submit-player-row '+(p.handSubmitted?'done':'waiting');
+    row.innerHTML=`<span>${p.avatar} ${p.name}</span><span style="font-size:13px;font-weight:800;">${p.handSubmitted?'✅ 提出済み':'⏳ 入力中'}</span>`;
+    statusList.appendChild(row);
+  });
+  renderAdminBar(state.players,'hand');
 }
 
-function showResultScreen(pName, cardValue, results, prizeChange, matchCount) {
+function renderHandInputSlots(){
+  const slots=document.getElementById('hand-input-slots');
+  slots.innerHTML='';
+  document.getElementById('submit-hand-btn').style.display='block';
+  document.getElementById('hand-submitted-msg').style.display='none';
+  for(let i=0;i<6;i++){
+    const div=document.createElement('div');
+    div.style.cssText='display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.15);border-radius:12px;padding:9px 12px;';
+    div.innerHTML=`<div style="width:22px;height:22px;background:var(--red);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;">${i+1}</div><input type="text" placeholder="ポケモン名…" id="hand-slot-${i}" autocomplete="off" autocorrect="off" class="fw" style="font-size:14px;padding:4px 8px;">`;
+    slots.appendChild(div);
+  }
+}
+
+function submitHand(){
+  const cards=[];
+  for(let i=0;i<6;i++){
+    const v=document.getElementById(`hand-slot-${i}`).value.trim();
+    if(!v){alert('6枚すべて入力してください');return;}
+    cards.push(v);
+  }
+  myHand=cards;myUsedCards=[];hasSubmittedHand=true;
+  send({type:'submit_hand',cards});
+  document.getElementById('submit-hand-btn').style.display='none';
+  document.getElementById('hand-submitted-msg').style.display='block';
+}
+
+function renderPlay(state){
+  showScreen('play');
+  const currentName=state.turnOrder[state.currentPlayerIndex];
+  const currentPlayer=state.players.find(p=>p.name===currentName);
+  const isMyTurn=currentName===myName;
+  document.getElementById('play-badge').textContent=`ラウンド${state.currentRound}/4`;
+  document.getElementById('play-player-name').textContent=currentPlayer?currentPlayer.name:'';
+  document.getElementById('play-player-money').textContent=currentPlayer?`$${currentPlayer.money}`:'';
+  document.getElementById('play-current-player').style.background=currentPlayer?.color||'#E3350D';
+  document.getElementById('play-prize').textContent=`$${state.prizePool}`;
+  const remaining=myHand.filter((_,i)=>!myUsedCards.includes(i));
+  document.getElementById('play-cards-left').textContent=`${remaining.length}枚`;
+  document.getElementById('play-theme').textContent=state.currentTheme;
+  if(isMyTurn){
+    document.getElementById('play-my-turn-area').style.display='block';
+    document.getElementById('play-wait-area').style.display='none';
+    selectedCardIndex=null;
+    document.getElementById('play-card-btn').disabled=true;
+    renderMyHand();
+  } else {
+    document.getElementById('play-my-turn-area').style.display='none';
+    document.getElementById('play-wait-area').style.display='block';
+    document.getElementById('play-wait-text').textContent=`${currentName} のターン…`;
+  }
+  renderAdminBar(state.players,'play');
+}
+
+function renderMyHand(){
+  const container=document.getElementById('play-hand-cards');
+  container.innerHTML='';
+  myHand.forEach((card,i)=>{
+    const isUsed=myUsedCards.includes(i);
+    const div=document.createElement('div');
+    div.className='hand-card'+(isUsed?' used':'');
+    div.innerHTML=`<span style="font-size:15px;font-weight:700;">${card}</span><span style="font-size:18px;">${isUsed?'✓':'🃏'}</span>`;
+    if(!isUsed){div.onclick=()=>{document.querySelectorAll('.hand-card:not(.used)').forEach(c=>c.classList.remove('selected'));div.classList.add('selected');selectedCardIndex=i;document.getElementById('play-card-btn').disabled=false;};}
+    container.appendChild(div);
+  });
+}
+
+function renderResult(state){
   showScreen('result');
-  document.getElementById('result-round-badge').textContent = `ラウンド ${game.currentRound}/4`;
-  document.getElementById('result-card-text').textContent = cardValue;
-
-  const emoji = matchCount > 0 ? '🎉' : '💸';
-  document.getElementById('result-emoji').textContent = emoji;
-  document.getElementById('result-title').textContent = matchCount > 0 ? `${matchCount}人と一致！` : 'ハズレ…';
-
-  const p = game.players.find(x => x.name === pName);
-  const changeText = prizeChange >= 0 ? `+$${prizeChange} 獲得` : `-$${Math.abs(prizeChange)} 没収`;
-  document.getElementById('result-prize-change').textContent = `${pName}: $${p.money} (${changeText})`;
-  document.getElementById('result-prize-change').style.color = prizeChange >= 0 ? '#00e87a' : '#ff6b4a';
-
-  const list = document.getElementById('result-list');
-  list.innerHTML = '';
-  results.forEach(r => {
-    const div = document.createElement('div');
-    div.className = `result-card ${r.matched ? 'match' : 'no-match'}`;
-    div.innerHTML = `
-      <div>
-        <div class="result-player">${r.avatar} ${r.name}</div>
-        <div class="result-answer">${r.matched ? '一致！' : '不一致'}</div>
-      </div>
-      <div class="result-badge">${r.matched ? '✓ MATCH' : '✗ MISS'}</div>
-    `;
+  const r=state.lastResult;
+  if(!r)return;
+  document.getElementById('result-badge').textContent=`ラウンド${state.currentRound}/4`;
+  document.getElementById('result-emoji').textContent=r.matchCount>0?'🎉':'💸';
+  document.getElementById('result-title').textContent=r.matchCount>0?`${r.matchCount}人と一致！`:'ハズレ…';
+  document.getElementById('result-card').textContent=r.cardValue;
+  const el=document.getElementById('result-change');
+  const changeText=r.prizeChange>=0?`+$${r.prizeChange} 獲得`:`-$${Math.abs(r.prizeChange)} 没収`;
+  el.textContent=`${r.playerName}: ${changeText}`;
+  el.style.color=r.prizeChange>=0?'#00e87a':'#ff6b4a';
+  if(r.playerName===myName&&selectedCardIndex!==null&&!myUsedCards.includes(selectedCardIndex))myUsedCards.push(selectedCardIndex);
+  const list=document.getElementById('result-list');
+  list.innerHTML='';
+  state.players.forEach(p=>{
+    if(p.name===r.playerName)return;
+    const matched=r.matchedPlayers.includes(p.name);
+    const div=document.createElement('div');
+    div.className=`result-card ${matched?'match':'no-match'}`;
+    div.innerHTML=`<div><div style="font-weight:700;">${p.avatar} ${p.name}</div></div><div class="result-badge">${matched?'✓ MATCH':'✗ MISS'}</div>`;
     list.appendChild(div);
   });
-
-  // Check round end
-  const roundOver = game.players.some(p => {
-    const remaining = game.hands[p.name].filter((_, i) => !game.usedCards[p.name].includes(i));
-    return remaining.length === 0;
-  });
-
-  document.getElementById('next-turn-btn').textContent = roundOver ? 'ラウンド終了！' : '次のターンへ';
-  document.getElementById('next-turn-btn').onclick = roundOver ? () => endRound() : () => nextTurn();
-}
-
-function nextTurn() {
-  game.currentPlayerIndex = (game.currentPlayerIndex + 1) % game.players.length;
-  showPlayScreen();
-}
-
-function endRound() {
-  const isLastRound = game.currentRound >= game.totalRounds;
-  showScreen('score');
-  document.getElementById('score-round-badge').textContent = `ラウンド ${game.currentRound}/4 終了`;
-  document.getElementById('score-title').textContent = isLastRound ? '最終結果！' : `ラウンド ${game.currentRound} 終了！`;
-  document.getElementById('score-prize-amount').textContent = `$${game.prizePool}`;
-
-  const sorted = [...game.players].sort((a, b) => b.money - a.money);
-  const list = document.getElementById('score-list');
-  list.innerHTML = '';
-  sorted.forEach((p, i) => {
-    const row = document.createElement('div');
-    row.className = 'score-row';
-    row.innerHTML = `
-      <div class="score-rank">${i + 1}</div>
-      <div style="font-size:20px;">${p.avatar}</div>
-      <div class="score-name">${p.name}</div>
-      <div class="score-amount">$${p.money}</div>
-    `;
-    list.appendChild(row);
-  });
-
-  if (isLastRound) {
-    document.getElementById('next-round-btn').textContent = '最終結果を見る';
-    document.getElementById('next-round-btn').onclick = showWinner;
-    document.getElementById('score-prize-pool').style.display = 'none';
+  const roundOver=state.phase==='round_end';
+  if(isHost){
+    document.getElementById('result-host-btn').style.display='block';
+    document.getElementById('result-wait-text').style.display='none';
+    const btn=document.getElementById('next-turn-btn');
+    btn.textContent=roundOver?'ラウンド終了！':'次のターンへ';
+    btn.onclick=roundOver?()=>nextRound():()=>nextTurn();
   } else {
-    document.getElementById('next-round-btn').textContent = `ラウンド ${game.currentRound + 1} へ`;
-    document.getElementById('next-round-btn').onclick = nextRound;
-    document.getElementById('score-prize-pool').style.display = '';
+    document.getElementById('result-host-btn').style.display='none';
+    document.getElementById('result-wait-text').style.display='block';
   }
+  renderAdminBar(state.players,'result');
 }
 
-function nextRound() {
-  game.currentRound++;
-  game.currentPlayerIndex = (game.roundStartPlayerIndex + 1) % game.players.length;
-  game.roundStartPlayerIndex = game.currentPlayerIndex;
-  game.turnOrder = [
-    ...game.players.slice(game.currentPlayerIndex).map(p => p.name),
-    ...game.players.slice(0, game.currentPlayerIndex).map(p => p.name),
-  ];
-  game.currentPlayerIndex = 0;
-  showThemeScreen();
+function renderRoundEnd(state){
+  showScreen('round-end');
+  const isLast=state.currentRound>=state.totalRounds;
+  document.getElementById('round-end-badge').textContent=`ラウンド${state.currentRound}/4 終了`;
+  document.getElementById('round-end-title').textContent=isLast?'最終結果！':`ラウンド ${state.currentRound} 終了！`;
+  document.getElementById('round-end-prize').textContent=`$${state.prizePool}`;
+  const sorted=[...state.players].sort((a,b)=>b.money-a.money);
+  const list=document.getElementById('round-end-scores');
+  list.innerHTML='';
+  sorted.forEach((p,i)=>{
+    const div=document.createElement('div');
+    div.className='score-row'+(i===0?' first':'');
+    div.innerHTML=`<div class="score-rank">${i+1}</div><div style="font-size:18px;">${p.avatar}</div><div style="font-weight:700;flex:1;">${p.name}</div><div style="font-family:'Zen Dots',sans-serif;font-size:18px;color:var(--yellow);">$${p.money}</div>`;
+    list.appendChild(div);
+  });
+  if(isHost){
+    document.getElementById('round-end-host-btn').style.display='block';
+    document.getElementById('round-end-wait-text').style.display='none';
+    const btn=document.getElementById('next-round-btn');
+    btn.textContent=isLast?'最終結果を見る':`ラウンド ${state.currentRound+1} へ`;
+    btn.onclick=()=>nextRound();
+  } else {
+    document.getElementById('round-end-host-btn').style.display='none';
+    document.getElementById('round-end-wait-text').style.display='block';
+  }
+  renderAdminBar(state.players,'round-end');
 }
 
-function showWinner() {
-  showScreen('winner');
-  const sorted = [...game.players].sort((a, b) => b.money - a.money);
-  const winner = sorted[0];
-  document.getElementById('winner-name').textContent = `${winner.avatar} ${winner.name}`;
-  document.getElementById('winner-amount').textContent = `$${winner.money}`;
-
-  const fs = document.getElementById('final-scores');
-  fs.innerHTML = '';
-  sorted.forEach((p, i) => {
-    const row = document.createElement('div');
-    row.className = 'score-row';
-    row.style.cssText = 'width:100%';
-    row.innerHTML = `
-      <div class="score-rank">${i+1}</div>
-      <div style="font-size:18px;">${p.avatar}</div>
-      <div class="score-name">${p.name}</div>
-      <div class="score-amount">$${p.money}</div>
-    `;
-    fs.appendChild(row);
+function renderGameEnd(state){
+  clearSession();
+  showScreen('game-end');
+  const sorted=[...state.players].sort((a,b)=>b.money-a.money);
+  const winner=sorted[0];
+  document.getElementById('winner-name').textContent=`${winner.avatar} ${winner.name}`;
+  document.getElementById('winner-amount').textContent=`$${winner.money}`;
+  const list=document.getElementById('final-scores');
+  list.innerHTML='';
+  sorted.forEach((p,i)=>{
+    const div=document.createElement('div');
+    div.className='score-row'+(i===0?' first':'');
+    div.innerHTML=`<div class="score-rank">${i+1}</div><div style="font-size:18px;">${p.avatar}</div><div style="font-weight:700;flex:1;">${p.name}</div><div style="font-family:'Zen Dots',sans-serif;font-size:18px;color:var(--yellow);">$${p.money}</div>`;
+    list.appendChild(div);
   });
 }
 
-// Init
-game.players = [
-  { name: '' }, { name: '' }, { name: '' }
-];
-renderSetup();
+function startGame(){send({type:'start_game'});}
+function selectTheme(){if(!selectedTheme){alert('お題を選んでください');return;}send({type:'select_theme',theme:selectedTheme});}
+function playCard(){if(selectedCardIndex===null)return;send({type:'play_card',cardIndex:selectedCardIndex});}
+function nextTurn(){send({type:'next_turn'});}
+function nextRound(){send({type:'next_round'});}
 </script>
 </body>
 </html>
