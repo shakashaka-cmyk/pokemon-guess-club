@@ -11,197 +11,251 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const rooms = {};
 
-const SAMPLE_TOPICS = [
-  { question: "お弁当のおかずで嬉しいのは？", choices: ["唐揚げ", "卵焼き", "ハンバーグ", "エビフライ", "肉じゃが", "ウインナー", "鮭の塩焼き"] },
-  { question: "無人島に1つだけ持っていくなら？", choices: ["スマホ", "ナイフ", "テント", "ライター", "釣り竿", "水", "本"] },
-  { question: "休日の過ごし方として最高なのは？", choices: ["ゲーム", "映画鑑賞", "昼寝", "旅行", "料理", "読書", "スポーツ"] },
-  { question: "ラーメンのトッピングで外せないのは？", choices: ["チャーシュー", "煮卵", "メンマ", "ねぎ", "もやし", "のり", "コーン"] },
-  { question: "1億円もらえる代償として許せるのは？", choices: ["1年間口がきけない", "10年間海外で暮らす", "好きな食べ物を一生食べられない", "毎朝4時起き", "SNS禁止", "髪を剃る", "毎日10km走る"] },
-  { question: "もし動物に生まれ変わるなら？", choices: ["猫", "犬", "イルカ", "鷹", "ライオン", "パンダ", "ペンギン"] },
-  { question: "カラオケで盛り上がる曲ジャンルは？", choices: ["J-POP", "アニソン", "演歌", "洋楽", "ヒップホップ", "昭和歌謡", "ボカロ"] },
-  { question: "夕食に毎日食べてもいいものは？", choices: ["寿司", "焼肉", "ラーメン", "カレー", "パスタ", "鍋", "唐揚げ"] },
-  { question: "超能力が使えるなら欲しいのは？", choices: ["テレパシー", "瞬間移動", "空を飛ぶ", "時間停止", "透明人間", "未来予知", "怪力"] },
-  { question: "SNSで一番使うのは？", choices: ["X(Twitter)", "Instagram", "TikTok", "YouTube", "LINE", "Facebook", "Threads"] },
-  { question: "才能をもらえるなら？", choices: ["速く走れる", "一発ギャグ", "酒に酔わない", "人に嫌われない", "見たものを忘れない", "動物と会話", "緊張しない"] },
-  { question: "言われたら嬉しい褒め言葉は？", choices: ["頭いいね", "話上手だね", "モテそうだね", "優しいね", "明るいね", "面白いね", "歌上手いね"] },
-  { question: "尊敬する人の特徴は？", choices: ["アートの才能がある", "歌がうまい", "運動神経抜群", "論理的思考ができる", "コミュ力が高い", "見た目に気を遣ってる", "お金を稼いでいる"] },
-  { question: "腹が立つ瞬間は？", choices: ["レジの順番を抜かされる", "勝手にカバンの中身を見られる", "注文した料理が届いてない", "ファッションをいじられる", "お菓子を許可なく一口食べられる", "3日連続で雨が降っている", "コンビニに食べたいものがない"] }
-];
-
-function broadcast(room, message) {
-  if (!rooms[room]) return;
-  const msg = JSON.stringify(message);
-  rooms[room].players.forEach(p => {
-    if (p.ws.readyState === WebSocket.OPEN) p.ws.send(msg);
+function broadcast(roomId, data) {
+  const room = rooms[roomId];
+  if (!room) return;
+  const msg = JSON.stringify(data);
+  room.clients.forEach(client => {
+    if (client.ws.readyState === WebSocket.OPEN) client.ws.send(msg);
   });
 }
 
-function getRoomState(room) {
-  const r = rooms[room];
+function sendTo(ws, data) {
+  if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(data));
+}
+
+function getRoomState(roomId) {
+  const room = rooms[roomId];
+  if (!room) return null;
+  const onlineNames = new Set(room.clients.filter(c => c.ws.readyState === WebSocket.OPEN).map(c => c.name));
   return {
-    players: r.players.map(p => ({ id: p.id, name: p.name, score: p.score, isHost: p.isHost })),
-    phase: r.phase,
-    round: r.round,
-    currentTopic: r.currentTopic,
-    outerId: r.outerId,
-    outerName: r.players.find(p => p.id === r.outerId)?.name || '',
-    submissions: r.phase === 'reveal' ? r.submissions : {},
-    outerAnswer: r.phase === 'reveal' ? r.outerAnswer : null,
-    roundScores: r.roundScores || {}
+    type: 'state',
+    phase: room.phase,
+    players: room.players.map(p => ({
+      name: p.name,
+      money: p.money,
+      avatar: p.avatar,
+      color: p.color,
+      cardCount: p.hand ? p.hand.filter((_, i) => !p.usedCards.includes(i)).length : 0,
+      isHost: p.isHost,
+      online: onlineNames.has(p.name),
+      handSubmitted: p.hand && p.hand.length > 0,
+    })),
+    currentRound: room.currentRound,
+    totalRounds: room.totalRounds,
+    currentTheme: room.currentTheme,
+    prizePool: room.prizePool,
+    currentPlayerIndex: room.currentPlayerIndex,
+    turnOrder: room.turnOrder,
+    handInputIndex: room.handInputIndex,
+    lastResult: room.lastResult,
+    submittedCount: room.players.filter(p => p.hand && p.hand.length > 0).length,
+    totalCount: room.players.length,
   };
 }
 
-// Heartbeat: 死活監視
-const heartbeatInterval = setInterval(() => {
-  wss.clients.forEach(ws => {
-    if (ws.isAlive === false) { ws.terminate(); return; }
-    ws.isAlive = false;
-    ws.ping();
-  });
-}, 25000);
-
-wss.on('close', () => clearInterval(heartbeatInterval));
+const AVATARS = ['🔥','💧','🌿','⚡','🌙','🌟','🐉','👻','🌊','🍃'];
+const COLORS = ['#E3350D','#3B82F6','#22C55E','#EAB308','#8B5CF6','#EC4899','#F97316','#6366F1','#06B6D4','#10B981'];
 
 wss.on('connection', (ws) => {
-  ws.isAlive = true;
-  ws.on('pong', () => { ws.isAlive = true; });
+  let playerRoomId = null;
+  let playerName = null;
 
-  let playerId = null;
-  let roomId = null;
-
-  ws.on('message', (data) => {
+  ws.on('message', (raw) => {
     let msg;
-    try { msg = JSON.parse(data); } catch { return; }
-
-    // クライアントからのping応答
-    if (msg.type === 'ping') {
-      ws.send(JSON.stringify({ type: 'pong' }));
-      return;
-    }
+    try { msg = JSON.parse(raw); } catch { return; }
 
     if (msg.type === 'create_room') {
-      roomId = Math.random().toString(36).substring(2, 7).toUpperCase();
-      playerId = 'p_' + Math.random().toString(36).substring(2, 8);
+      const roomId = Math.random().toString(36).substr(2, 5).toUpperCase();
       rooms[roomId] = {
-        players: [{ id: playerId, name: msg.name, score: 0, isHost: true, ws }],
-        phase: 'lobby', round: 0, outerId: null,
-        currentTopic: null, outerAnswer: null, submissions: {}, roundScores: {}
+        phase: 'lobby', players: [], currentRound: 1, totalRounds: 4,
+        currentTheme: '', prizePool: 0, currentPlayerIndex: 0,
+        turnOrder: [], handInputIndex: 0, lastResult: null, clients: [],
       };
-      ws.send(JSON.stringify({ type: 'joined', roomId, playerId, state: getRoomState(roomId) }));
+      playerRoomId = roomId;
+      playerName = msg.name;
+      rooms[roomId].players.push({ name: msg.name, money: 150, avatar: AVATARS[0], color: COLORS[0], isHost: true, hand: [], usedCards: [], ws });
+      rooms[roomId].clients.push({ name: msg.name, ws });
+      sendTo(ws, { type: 'room_created', roomId });
+      broadcast(roomId, getRoomState(roomId));
     }
 
     else if (msg.type === 'join_room') {
-      roomId = msg.roomId.toUpperCase();
-      if (!rooms[roomId]) { ws.send(JSON.stringify({ type: 'error', message: 'ルームが見つかりません' })); return; }
-      if (rooms[roomId].phase !== 'lobby') { ws.send(JSON.stringify({ type: 'error', message: 'ゲームはすでに開始されています' })); return; }
-      playerId = 'p_' + Math.random().toString(36).substring(2, 8);
-      rooms[roomId].players.push({ id: playerId, name: msg.name, score: 0, isHost: false, ws });
-      ws.send(JSON.stringify({ type: 'joined', roomId, playerId, state: getRoomState(roomId) }));
-      broadcast(roomId, { type: 'state_update', state: getRoomState(roomId) });
+      const roomId = msg.roomId.toUpperCase();
+      const room = rooms[roomId];
+      if (!room) { sendTo(ws, { type: 'error', message: 'ルームが見つかりません' }); return; }
+
+      // 再接続チェック
+      const existing = room.players.find(p => p.name === msg.name);
+      if (existing) {
+        if (existing.disconnectTimer) { clearTimeout(existing.disconnectTimer); existing.disconnectTimer = null; }
+        existing.ws = ws;
+        playerRoomId = roomId;
+        playerName = msg.name;
+        const clientEntry = room.clients.find(c => c.name === msg.name);
+        if (clientEntry) clientEntry.ws = ws;
+        else room.clients.push({ name: msg.name, ws });
+        // rejoinedに手札データを含めて一発で送る
+        sendTo(ws, { type: 'rejoined', roomId, hand: existing.hand, usedCards: existing.usedCards, phase: room.phase, theme: room.currentTheme });
+        broadcast(roomId, getRoomState(roomId));
+        return;
+      }
+
+      if (room.phase !== 'lobby') { sendTo(ws, { type: 'error', message: 'ゲームはすでに始まっています' }); return; }
+      if (room.players.length >= 6) { sendTo(ws, { type: 'error', message: 'プレイヤーが満員です' }); return; }
+
+      playerRoomId = roomId;
+      playerName = msg.name;
+      const idx = room.players.length;
+      room.players.push({ name: msg.name, money: 150, avatar: AVATARS[idx % AVATARS.length], color: COLORS[idx % COLORS.length], isHost: false, hand: [], usedCards: [], ws });
+      room.clients.push({ name: msg.name, ws });
+      sendTo(ws, { type: 'joined', roomId });
+      broadcast(roomId, getRoomState(roomId));
     }
 
     else if (msg.type === 'start_game') {
-      const r = rooms[roomId];
-      if (!r) return;
-      r.phase = 'topic_select'; r.round = 1; r.outerId = r.players[0].id;
-      r.players.forEach(p => p.score = 0);
-      broadcast(roomId, { type: 'state_update', state: getRoomState(roomId) });
+      const room = rooms[playerRoomId];
+      if (!room) return;
+      const host = room.players.find(p => p.name === playerName);
+      if (!host?.isHost) return;
+      if (room.players.length < 2) { sendTo(ws, { type: 'error', message: '2人以上必要です' }); return; }
+      room.phase = 'theme_select';
+      room.currentRound = 1;
+      room.prizePool = 0;
+      room.turnOrder = room.players.map(p => p.name);
+      room.currentPlayerIndex = 0;
+      room.players.forEach(p => { p.money = 150; p.hand = []; p.usedCards = []; });
+      broadcast(playerRoomId, getRoomState(playerRoomId));
     }
 
-    else if (msg.type === 'set_topic') {
-      const r = rooms[roomId];
-      if (!r || r.outerId !== playerId) return;
-      r.currentTopic = msg.topic;
-      r.phase = 'outer_answer'; r.outerAnswer = null; r.submissions = {}; r.roundScores = {};
-      broadcast(roomId, { type: 'state_update', state: getRoomState(roomId) });
+    else if (msg.type === 'select_theme') {
+      const room = rooms[playerRoomId];
+      if (!room) return;
+      const host = room.players.find(p => p.name === playerName);
+      if (!host?.isHost) return;
+      room.currentTheme = msg.theme;
+      room.phase = 'hand_input';
+      room.handInputIndex = 0;
+      // 全員の手札をリセット
+      room.players.forEach(p => { p.hand = []; p.usedCards = []; });
+      // 全員に一斉入力要求
+      room.players.forEach(p => {
+        sendTo(p.ws, { type: 'your_turn_input', theme: room.currentTheme });
+      });
+      broadcast(playerRoomId, getRoomState(playerRoomId));
     }
 
-    else if (msg.type === 'outer_answer') {
-      const r = rooms[roomId];
-      if (!r || r.outerId !== playerId) return;
-      r.outerAnswer = msg.ranking;
-      r.phase = 'guessing';
-      broadcast(roomId, { type: 'state_update', state: getRoomState(roomId) });
-    }
-
-    else if (msg.type === 'submit_guess') {
-      const r = rooms[roomId];
-      if (!r || playerId === r.outerId) return;
-      r.submissions[playerId] = msg.ranking;
-      const guessers = r.players.filter(p => p.id !== r.outerId);
-      if (guessers.every(p => r.submissions[p.id])) {
-        r.roundScores = {};
-        guessers.forEach(p => { r.roundScores[p.id] = calcScore(r.outerAnswer, r.submissions[p.id]); });
-        guessers.forEach(p => { p.score += r.roundScores[p.id].total; });
-        r.phase = 'reveal';
-        broadcast(roomId, { type: 'state_update', state: getRoomState(roomId) });
-      } else {
-        broadcast(roomId, { type: 'state_update', state: getRoomState(roomId) });
+    else if (msg.type === 'submit_hand') {
+      const room = rooms[playerRoomId];
+      if (!room) return;
+      const player = room.players.find(p => p.name === playerName);
+      if (!player) return;
+      player.hand = msg.cards;
+      player.usedCards = [];
+      // 全員提出済みか確認
+      const allSubmitted = room.players.every(p => p.hand && p.hand.length > 0);
+      if (allSubmitted) {
+        room.phase = 'play';
+        room.currentPlayerIndex = 0;
       }
+      broadcast(playerRoomId, getRoomState(playerRoomId));
+    }
+
+    else if (msg.type === 'play_card') {
+      const room = rooms[playerRoomId];
+      if (!room) return;
+      const currentName = room.turnOrder[room.currentPlayerIndex];
+      if (playerName !== currentName) return;
+      const player = room.players.find(p => p.name === playerName);
+      const cardIndex = msg.cardIndex;
+      const cardValue = player.hand[cardIndex].trim().toLowerCase().replace(/[　\s]/g, '');
+      player.usedCards.push(cardIndex);
+
+      let matchCount = 0;
+      const matchedPlayers = [];
+      room.players.forEach(op => {
+        if (op.name === playerName) return;
+        for (let gi = 0; gi < op.hand.length; gi++) {
+          if (!op.usedCards.includes(gi) && op.hand[gi].trim().toLowerCase().replace(/[　\s]/g, '') === cardValue) {
+            matchCount++;
+            matchedPlayers.push(op.name);
+            op.usedCards.push(gi);
+            break;
+          }
+        }
+      });
+
+      let prizeChange = 0;
+      if (matchCount > 0) {
+        prizeChange = matchCount * 10 + room.prizePool;
+        player.money += prizeChange;
+        room.prizePool = 0;
+      } else {
+        prizeChange = -10;
+        player.money -= 10;
+        room.prizePool += 10;
+      }
+
+      room.lastResult = { playerName, cardValue: player.hand[cardIndex], matchCount, matchedPlayers, prizeChange, prizePool: room.prizePool };
+
+      const roundOver = room.players.some(p => p.hand.filter((_, i) => !p.usedCards.includes(i)).length === 0);
+      room.phase = roundOver ? 'round_end' : 'result';
+      broadcast(playerRoomId, getRoomState(playerRoomId));
+    }
+
+    else if (msg.type === 'next_turn') {
+      const room = rooms[playerRoomId];
+      if (!room) return;
+      if (!room.players.find(p => p.name === playerName)?.isHost) return;
+      room.currentPlayerIndex = (room.currentPlayerIndex + 1) % room.players.length;
+      room.phase = 'play';
+      room.lastResult = null;
+      broadcast(playerRoomId, getRoomState(playerRoomId));
     }
 
     else if (msg.type === 'next_round') {
-      const r = rooms[roomId];
-      if (!r) return;
-      r.round++;
-      const idx = r.players.findIndex(p => p.id === r.outerId);
-      r.outerId = r.players[(idx + 1) % r.players.length].id;
-      r.phase = 'topic_select'; r.currentTopic = null; r.outerAnswer = null; r.submissions = {}; r.roundScores = {};
-      broadcast(roomId, { type: 'state_update', state: getRoomState(roomId) });
-    }
-
-    else if (msg.type === 'end_game') {
-      const r = rooms[roomId];
-      if (!r) return;
-      r.phase = 'result';
-      broadcast(roomId, { type: 'state_update', state: getRoomState(roomId) });
-    }
-
-    else if (msg.type === 'restart') {
-      const r = rooms[roomId];
-      if (!r) return;
-      r.phase = 'lobby'; r.round = 0; r.outerId = null;
-      r.currentTopic = null; r.outerAnswer = null; r.submissions = {}; r.roundScores = {};
-      r.players.forEach(p => p.score = 0);
-      broadcast(roomId, { type: 'state_update', state: getRoomState(roomId) });
+      const room = rooms[playerRoomId];
+      if (!room) return;
+      if (!room.players.find(p => p.name === playerName)?.isHost) return;
+      if (room.currentRound >= room.totalRounds) {
+        room.phase = 'game_end';
+      } else {
+        room.currentRound++;
+        room.currentPlayerIndex = room.currentRound % room.players.length;
+        room.turnOrder = [
+          ...room.players.slice(room.currentPlayerIndex).map(p => p.name),
+          ...room.players.slice(0, room.currentPlayerIndex).map(p => p.name),
+        ];
+        room.currentPlayerIndex = 0;
+        room.phase = 'theme_select';
+        room.lastResult = null;
+      }
+      broadcast(playerRoomId, getRoomState(playerRoomId));
     }
   });
 
   ws.on('close', () => {
-    if (roomId && rooms[roomId]) {
-      rooms[roomId].players = rooms[roomId].players.filter(p => p.id !== playerId);
-      if (rooms[roomId].players.length === 0) {
-        delete rooms[roomId];
-      } else {
-        if (!rooms[roomId].players.find(p => p.isHost)) rooms[roomId].players[0].isHost = true;
-        broadcast(roomId, { type: 'state_update', state: getRoomState(roomId) });
+    if (!playerRoomId || !playerName) return;
+    const room = rooms[playerRoomId];
+    if (!room) return;
+    room.clients = room.clients.filter(c => c.name !== playerName);
+    // オンライン状態更新をブロードキャスト
+    broadcast(playerRoomId, getRoomState(playerRoomId));
+    const player = room.players.find(p => p.name === playerName);
+    if (!player) return;
+    player.disconnectTimer = setTimeout(() => {
+      const r = rooms[playerRoomId];
+      if (!r) return;
+      if (player.isHost) {
+        const next = r.players.find(p => p.name !== playerName);
+        if (next) next.isHost = true;
       }
-    }
+      r.players = r.players.filter(p => p.name !== playerName);
+      if (r.players.length === 0) { delete rooms[playerRoomId]; return; }
+      broadcast(playerRoomId, getRoomState(playerRoomId));
+    }, 30000);
   });
 });
 
-function calcScore(answer, guess) {
-  let tanMatches = [], fukuMatches = [];
-  for (let i = 0; i < 3; i++) {
-    if (answer[i] === guess[i]) tanMatches.push(i + 1);
-    else if (guess.includes(answer[i])) fukuMatches.push(i + 1);
-  }
-  const tanCount = tanMatches.length, fukuCount = fukuMatches.length;
-  let label = '', total = 0;
-  if (tanCount === 3)                          { label = 'サンレンタン';     total = 6; }
-  else if (tanCount === 2 && fukuCount === 1)  { label = 'ニレンタン＋プク'; total = 4; }
-  else if (tanCount === 2 && fukuCount === 0)  { label = 'ニレンタン';       total = 3; }
-  else if (tanCount === 1 && fukuCount === 2)  { label = 'タン＋ニプク';     total = 3; }
-  else if (tanCount === 1 && fukuCount === 1)  { label = 'タン＋プク';       total = 2; }
-  else if (tanCount === 1 && fukuCount === 0)  { label = 'タン';             total = 1; }
-  else if (tanCount === 0 && fukuCount === 3)  { label = 'サンレンプク';     total = 4; }
-  else if (tanCount === 0 && fukuCount === 2)  { label = 'ニプク';           total = 2; }
-  else if (tanCount === 0 && fukuCount === 1)  { label = 'プク';             total = 1; }
-  else                                         { label = 'ハズレ';           total = 0; }
-  return { tanMatches, fukuMatches, label, total };
-}
-
-app.get('/api/topics', (req, res) => res.json(SAMPLE_TOPICS));
-
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`サンレンタンサーバー起動中: http://localhost:${PORT}`));
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
