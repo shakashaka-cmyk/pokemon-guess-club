@@ -113,7 +113,7 @@ wss.on('connection', (ws) => {
       }
 
       if (room.phase !== 'lobby') { sendTo(ws, { type: 'error', message: 'ゲームはすでに始まっています' }); return; }
-      if (room.players.length >= 6) { sendTo(ws, { type: 'error', message: 'プレイヤーが満員です' }); return; }
+      if (room.players.length >= 8) { sendTo(ws, { type: 'error', message: 'プレイヤーが満員です' }); return; }
 
       playerRoomId = roomId;
       playerName = msg.name;
