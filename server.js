@@ -40,6 +40,9 @@ function getRoomState(roomId) {
       isHost: p.isHost,
       online: onlineNames.has(p.name),
       handSubmitted: p.hand && p.hand.length > 0,
+      // 自分以外には見せない手札詳細(usedCardsのインデックスのみ)。フロントで自分の手札と統合する
+      usedCards: p.usedCards,
+      roundStartMoney: p.roundStartMoney,
     })),
     currentRound: room.currentRound,
     totalRounds: room.totalRounds,
@@ -57,6 +60,10 @@ function getRoomState(roomId) {
 const AVATARS = ['🔥','💧','🌿','⚡','🌙','🌟','🐉','👻','🌊','🍃'];
 const COLORS = ['#E3350D','#3B82F6','#22C55E','#EAB308','#8B5CF6','#EC4899','#F97316','#6366F1','#06B6D4','#10B981'];
 
+function checkRoundOver(room) {
+  return room.players.some(p => p.hand.filter((_, i) => !p.usedCards.includes(i)).length === 0);
+}
+
 wss.on('connection', (ws) => {
   let playerRoomId = null;
   let playerName = null;
@@ -66,6 +73,7 @@ wss.on('connection', (ws) => {
     try { msg = JSON.parse(raw); } catch { return; }
 
     if (msg.type === 'create_room') {
+      // 既に同名のルームを作成済みで二重作成を防ぐ(多重クリック対策)
       const roomId = Math.random().toString(36).substr(2, 5).toUpperCase();
       rooms[roomId] = {
         phase: 'lobby', players: [], currentRound: 1, totalRounds: 4,
@@ -74,7 +82,7 @@ wss.on('connection', (ws) => {
       };
       playerRoomId = roomId;
       playerName = msg.name;
-      rooms[roomId].players.push({ name: msg.name, money: 150, avatar: AVATARS[0], color: COLORS[0], isHost: true, hand: [], usedCards: [], ws });
+      rooms[roomId].players.push({ name: msg.name, money: 150, roundStartMoney: 150, avatar: AVATARS[0], color: COLORS[0], isHost: true, hand: [], usedCards: [], ws });
       rooms[roomId].clients.push({ name: msg.name, ws });
       sendTo(ws, { type: 'room_created', roomId });
       broadcast(roomId, getRoomState(roomId));
@@ -95,8 +103,11 @@ wss.on('connection', (ws) => {
         const clientEntry = room.clients.find(c => c.name === msg.name);
         if (clientEntry) clientEntry.ws = ws;
         else room.clients.push({ name: msg.name, ws });
-        // rejoinedに手札データを含めて一発で送る
-        sendTo(ws, { type: 'rejoined', roomId, hand: existing.hand, usedCards: existing.usedCards, phase: room.phase, theme: room.currentTheme });
+        sendTo(ws, {
+          type: 'rejoined', roomId,
+          hand: existing.hand, usedCards: existing.usedCards,
+          phase: room.phase, theme: room.currentTheme,
+        });
         broadcast(roomId, getRoomState(roomId));
         return;
       }
@@ -107,10 +118,23 @@ wss.on('connection', (ws) => {
       playerRoomId = roomId;
       playerName = msg.name;
       const idx = room.players.length;
-      room.players.push({ name: msg.name, money: 150, avatar: AVATARS[idx % AVATARS.length], color: COLORS[idx % COLORS.length], isHost: false, hand: [], usedCards: [], ws });
+      room.players.push({ name: msg.name, money: 150, roundStartMoney: 150, avatar: AVATARS[idx % AVATARS.length], color: COLORS[idx % COLORS.length], isHost: false, hand: [], usedCards: [], ws });
       room.clients.push({ name: msg.name, ws });
       sendTo(ws, { type: 'joined', roomId });
       broadcast(roomId, getRoomState(roomId));
+    }
+
+    else if (msg.type === 'set_total_rounds') {
+      const room = rooms[playerRoomId];
+      if (!room) return;
+      const host = room.players.find(p => p.name === playerName);
+      if (!host?.isHost) return;
+      if (room.phase !== 'lobby') return;
+      const n = parseInt(msg.totalRounds, 10);
+      if (n >= 2 && n <= 6) {
+        room.totalRounds = n;
+        broadcast(playerRoomId, getRoomState(playerRoomId));
+      }
     }
 
     else if (msg.type === 'start_game') {
@@ -124,7 +148,7 @@ wss.on('connection', (ws) => {
       room.prizePool = 0;
       room.turnOrder = room.players.map(p => p.name);
       room.currentPlayerIndex = 0;
-      room.players.forEach(p => { p.money = 150; p.hand = []; p.usedCards = []; });
+      room.players.forEach(p => { p.money = 150; p.roundStartMoney = 150; p.hand = []; p.usedCards = []; });
       broadcast(playerRoomId, getRoomState(playerRoomId));
     }
 
@@ -136,9 +160,7 @@ wss.on('connection', (ws) => {
       room.currentTheme = msg.theme;
       room.phase = 'hand_input';
       room.handInputIndex = 0;
-      // 全員の手札をリセット
       room.players.forEach(p => { p.hand = []; p.usedCards = []; });
-      // 全員に一斉入力要求
       room.players.forEach(p => {
         sendTo(p.ws, { type: 'your_turn_input', theme: room.currentTheme });
       });
@@ -152,11 +174,12 @@ wss.on('connection', (ws) => {
       if (!player) return;
       player.hand = msg.cards;
       player.usedCards = [];
-      // 全員提出済みか確認
       const allSubmitted = room.players.every(p => p.hand && p.hand.length > 0);
       if (allSubmitted) {
         room.phase = 'play';
         room.currentPlayerIndex = 0;
+        // ラウンド開始時点の所持金を記録(得失点計算用)
+        room.players.forEach(p => { p.roundStartMoney = p.money; });
       }
       broadcast(playerRoomId, getRoomState(playerRoomId));
     }
@@ -168,6 +191,7 @@ wss.on('connection', (ws) => {
       if (playerName !== currentName) return;
       const player = room.players.find(p => p.name === playerName);
       const cardIndex = msg.cardIndex;
+      if (player.usedCards.includes(cardIndex)) return; // 既出カード防止
       const cardValue = player.hand[cardIndex].trim().toLowerCase().replace(/[　\s]/g, '');
       player.usedCards.push(cardIndex);
 
@@ -179,7 +203,7 @@ wss.on('connection', (ws) => {
           if (!op.usedCards.includes(gi) && op.hand[gi].trim().toLowerCase().replace(/[　\s]/g, '') === cardValue) {
             matchCount++;
             matchedPlayers.push(op.name);
-            op.usedCards.push(gi);
+            op.usedCards.push(gi); // 被った相手のカードも消費済みにする
             break;
           }
         }
@@ -198,7 +222,7 @@ wss.on('connection', (ws) => {
 
       room.lastResult = { playerName, cardValue: player.hand[cardIndex], matchCount, matchedPlayers, prizeChange, prizePool: room.prizePool };
 
-      const roundOver = room.players.some(p => p.hand.filter((_, i) => !p.usedCards.includes(i)).length === 0);
+      const roundOver = checkRoundOver(room);
       room.phase = roundOver ? 'round_end' : 'result';
       broadcast(playerRoomId, getRoomState(playerRoomId));
     }
@@ -207,7 +231,26 @@ wss.on('connection', (ws) => {
       const room = rooms[playerRoomId];
       if (!room) return;
       if (!room.players.find(p => p.name === playerName)?.isHost) return;
-      room.currentPlayerIndex = (room.currentPlayerIndex + 1) % room.players.length;
+
+      // ラウンドが終わっていたらround_endへ(安全策。通常はplay_card側で判定済み)
+      if (checkRoundOver(room)) {
+        room.phase = 'round_end';
+        broadcast(playerRoomId, getRoomState(playerRoomId));
+        return;
+      }
+
+      // 次に手番が回るのは「まだ手札が残っているプレイヤー」
+      let next = (room.currentPlayerIndex + 1) % room.players.length;
+      let loopGuard = 0;
+      while (loopGuard < room.players.length) {
+        const name = room.turnOrder[next];
+        const p = room.players.find(pl => pl.name === name);
+        const remaining = p.hand.filter((_, i) => !p.usedCards.includes(i)).length;
+        if (remaining > 0) break;
+        next = (next + 1) % room.players.length;
+        loopGuard++;
+      }
+      room.currentPlayerIndex = next;
       room.phase = 'play';
       room.lastResult = null;
       broadcast(playerRoomId, getRoomState(playerRoomId));
@@ -239,7 +282,6 @@ wss.on('connection', (ws) => {
     const room = rooms[playerRoomId];
     if (!room) return;
     room.clients = room.clients.filter(c => c.name !== playerName);
-    // オンライン状態更新をブロードキャスト
     broadcast(playerRoomId, getRoomState(playerRoomId));
     const player = room.players.find(p => p.name === playerName);
     if (!player) return;

@@ -21,7 +21,6 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .btn-primary{background:var(--yellow);color:var(--dark);}
 .btn-secondary{background:rgba(255,255,255,.1);color:white;border:1.5px solid rgba(255,255,255,.2);}
 .btn:disabled{opacity:.4;cursor:not-allowed;}
-/* inputは基本auto幅・コンパクト */
 input[type=text]{display:inline-block;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.2);border-radius:8px;padding:5px 9px;color:white;font-family:inherit;font-size:14px;outline:none;transition:border-color .2s;line-height:1.4;}
 input[type=text]:focus{border-color:var(--yellow);}
 input[type=text]::placeholder{color:rgba(255,255,255,.3);}
@@ -51,6 +50,10 @@ input[type=text].fw{width:100%;display:block;}
 .score-row.first{border-color:var(--yellow);background:rgba(255,203,5,.1);}
 .score-rank{font-family:'Zen Dots',sans-serif;font-size:20px;width:28px;text-align:center;flex-shrink:0;}
 .first .score-rank{color:var(--yellow);}
+.score-delta{font-size:12px;font-weight:800;padding:2px 8px;border-radius:10px;flex-shrink:0;}
+.score-delta.up{background:rgba(0,232,122,.15);color:#00e87a;}
+.score-delta.down{background:rgba(227,53,13,.15);color:#ff6b4a;}
+.score-delta.zero{background:rgba(255,255,255,.08);color:rgba(255,255,255,.5);}
 .player-chip{display:flex;align-items:center;gap:8px;padding:9px 14px;background:rgba(255,255,255,.06);border-radius:12px;border:1px solid rgba(255,255,255,.1);}
 .themes-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .theme-chip{background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.15);border-radius:12px;padding:11px;text-align:center;cursor:pointer;font-size:13px;font-weight:700;transition:all .15s;}
@@ -58,6 +61,9 @@ input[type=text].fw{width:100%;display:block;}
 .theme-chip.active{border-color:var(--yellow);background:rgba(255,203,5,.15);color:var(--yellow);}
 .waiting-anim{font-size:32px;animation:spin 2s linear infinite;display:inline-block;}
 @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@keyframes spinIn{from{transform:rotate(-180deg) scale(0);opacity:0}to{transform:rotate(0) scale(1);opacity:1}}
+@keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-12px)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .room-id-display{font-family:'Zen Dots',sans-serif;font-size:36px;letter-spacing:8px;color:var(--yellow);text-align:center;padding:14px;background:rgba(255,203,5,.1);border-radius:16px;border:2px dashed var(--yellow);}
 .money-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .money-chip{background:rgba(255,255,255,.06);border-radius:12px;padding:12px;text-align:center;}
@@ -66,8 +72,6 @@ input[type=text].fw{width:100%;display:block;}
 .gold{color:var(--yellow);}
 .error-msg{color:#ff6b4a;font-size:13px;}
 .fade-in{animation:fadeIn .3s ease;}
-@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-/* 管理バー */
 .admin-bar{position:fixed;bottom:0;left:0;right:0;background:rgba(15,15,30,.97);border-top:2px solid rgba(255,255,255,.12);padding:8px 16px 14px;z-index:100;}
 .admin-bar-title{font-size:10px;color:rgba(255,255,255,.35);letter-spacing:1px;margin-bottom:6px;}
 .admin-players{display:flex;gap:6px;flex-wrap:wrap;}
@@ -77,12 +81,15 @@ input[type=text].fw{width:100%;display:block;}
 .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
 .online .dot{background:#00e87a;}
 .offline .dot{background:#666;}
-/* 提出状況バー */
 .submit-status{display:flex;flex-direction:column;gap:6px;}
 .submit-player-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:10px;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);}
 .submit-player-row.done{border-color:#00e87a;background:rgba(0,232,122,.08);}
 .submit-player-row.waiting{border-color:rgba(255,203,5,.4);background:rgba(255,203,5,.05);}
 .back-btn{background:none;border:none;color:var(--yellow);font-size:20px;cursor:pointer;padding:0 8px 0 0;line-height:1;}
+.round-stepper{display:flex;align-items:center;justify-content:center;gap:16px;background:rgba(255,255,255,.06);border-radius:14px;padding:12px 16px;}
+.stepper-btn{width:36px;height:36px;border-radius:50%;border:1.5px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:white;font-size:18px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.stepper-btn:disabled{opacity:.3;cursor:not-allowed;}
+.stepper-value{font-family:'Zen Dots',sans-serif;font-size:28px;color:var(--yellow);min-width:50px;text-align:center;}
 </style>
 </head>
 <body>
@@ -94,7 +101,6 @@ input[type=text].fw{width:100%;display:block;}
       <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:20px;height:20px;border-radius:50%;background:white;border:3px solid var(--dark);z-index:1;"></div>
       <div style="position:absolute;top:calc(50% - 2px);left:0;right:0;height:4px;background:var(--dark);"></div>
     </div>
-    @keyframes spinIn{from{transform:rotate(-180deg) scale(0);opacity:0}to{transform:rotate(0) scale(1);opacity:1}}
     <div>
       <div style="font-family:'Zen Dots',sans-serif;font-size:28px;color:var(--yellow);text-shadow:2px 2px 0 var(--red);">ポケモン<br>ゲスクラブ</div>
       <div style="font-size:13px;color:rgba(255,255,255,.5);margin-top:6px;">みんなと被れ！ポケモン心理戦</div>
@@ -118,7 +124,7 @@ input[type=text].fw{width:100%;display:block;}
     <input type="text" id="create-name" placeholder="名前…" maxlength="10">
     <div id="create-error" class="error-msg"></div>
     <div class="spacer"></div>
-    <button class="btn btn-primary" onclick="createRoom()">部屋を作成する</button>
+    <button class="btn btn-primary" onclick="createRoom()" id="create-room-btn">部屋を作成する</button>
   </div>
 </div>
 
@@ -136,7 +142,7 @@ input[type=text].fw{width:100%;display:block;}
     <input type="text" id="join-room-id" placeholder="XXXXX" maxlength="5" style="font-family:'Zen Dots',sans-serif;font-size:18px;letter-spacing:4px;text-align:center;text-transform:uppercase;width:130px;">
     <div id="join-error" class="error-msg"></div>
     <div class="spacer"></div>
-    <button class="btn btn-primary" onclick="joinRoom()">参加する</button>
+    <button class="btn btn-primary" onclick="joinRoom()" id="join-room-btn">参加する</button>
   </div>
 </div>
 
@@ -148,6 +154,19 @@ input[type=text].fw{width:100%;display:block;}
     <div class="room-id-display" id="lobby-room-id">-----</div>
     <div class="section-title">参加中</div>
     <div id="lobby-players" style="display:flex;flex-direction:column;gap:8px;"></div>
+
+    <div id="lobby-round-setting" style="display:none;">
+      <div class="section-title">ラウンド数</div>
+      <div class="round-stepper">
+        <button class="stepper-btn" onclick="changeRounds(-1)">−</button>
+        <div class="stepper-value" id="round-stepper-value">4</div>
+        <button class="stepper-btn" onclick="changeRounds(1)">＋</button>
+      </div>
+    </div>
+    <div id="lobby-round-display" style="display:none;">
+      <div class="prize-row"><div><div class="prize-label">ラウンド数</div></div><div class="prize-amount" id="lobby-round-display-value"></div></div>
+    </div>
+
     <div class="spacer"></div>
     <div id="lobby-host-area" style="display:none;">
       <button class="btn btn-primary" onclick="startGame()" id="start-game-btn">ゲーム開始！</button>
@@ -198,13 +217,13 @@ input[type=text].fw{width:100%;display:block;}
 
 <!-- HAND INPUT -->
 <div id="screen-hand-input" class="screen">
-  <div class="header"><div class="logo">GUESS CLUB</div><div class="badge">手札入力</div></div>
+  <div class="header"><div class="logo">GUESS CLUB</div><div class="badge">回答入力</div></div>
   <div class="body">
     <div class="theme-box">
       <div class="theme-label">お題</div>
       <div class="theme-text" id="hand-input-theme"></div>
     </div>
-    <div class="section-title">6枚の答えを入力（他の人に見せないで！）</div>
+    <div class="section-title">6つの答えを入力（他の人に見せないで！）</div>
     <div id="hand-input-slots" style="display:flex;flex-direction:column;gap:8px;"></div>
     <div class="spacer"></div>
     <div id="submit-status-area">
@@ -228,7 +247,7 @@ input[type=text].fw{width:100%;display:block;}
     </div>
     <div class="money-grid">
       <div class="money-chip"><div class="money-chip-label">💰 賞金プール</div><div class="money-chip-value gold" id="play-prize"></div></div>
-      <div class="money-chip"><div class="money-chip-label">🃏 残り手札</div><div class="money-chip-value" id="play-cards-left"></div></div>
+      <div class="money-chip"><div class="money-chip-label">🃏 残り回答</div><div class="money-chip-value" id="play-cards-left"></div></div>
     </div>
     <div class="theme-box" style="padding:10px 16px;">
       <div class="theme-label">お題</div>
@@ -259,7 +278,7 @@ input[type=text].fw{width:100%;display:block;}
       <div style="font-family:'Zen Dots',sans-serif;font-size:15px;margin-top:4px;" id="result-change"></div>
     </div>
     <div class="card" style="text-align:center;">
-      <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:4px;">出したカード</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:4px;">出した回答</div>
       <div style="font-size:22px;font-weight:800;" id="result-card"></div>
     </div>
     <div class="section-title">マッチ結果</div>
@@ -278,6 +297,7 @@ input[type=text].fw{width:100%;display:block;}
   <div class="header"><div class="logo">GUESS CLUB</div><div class="badge" id="round-end-badge">ラウンド終了</div></div>
   <div class="body">
     <div style="text-align:center;"><div style="font-size:28px;margin-bottom:6px;">🏆</div><div style="font-size:18px;font-weight:800;" id="round-end-title"></div></div>
+    <div class="section-title">このラウンドの結果</div>
     <div id="round-end-scores" style="display:flex;flex-direction:column;gap:8px;"></div>
     <div class="prize-row"><div><div class="prize-label">持ち越し賞金</div></div><div class="prize-amount" id="round-end-prize"></div></div>
     <div class="spacer"></div>
@@ -305,7 +325,6 @@ input[type=text].fw{width:100%;display:block;}
     <button class="btn btn-primary" onclick="clearSession();location.reload();">もう一度プレイ</button>
   </div>
 </div>
-<style>@keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-12px)}}</style>
 
 <script>
 const THEMES=['ほのおタイプ','みずタイプ','でんきタイプ','くさタイプ','こおりタイプ','かくとうタイプ','どくタイプ','じめんタイプ','ひこうタイプ','エスパータイプ','むしタイプ','いわタイプ','ゴーストタイプ','ドラゴンタイプ','あくタイプ','はがねタイプ','フェアリータイプ','かわいいポケモン','こわいポケモン','強そうなポケモン','かっこいいポケモン','伝説のポケモン','進化しないポケモン','最終進化形のポケモン','第1世代のポケモン','第2世代のポケモン','第5世代のポケモン','空を飛べるポケモン','人気の高いポケモン','主人公が使ったポケモン','ロケット団のポケモン','ジムリーダーが使うポケモン'];
@@ -313,6 +332,8 @@ const THEMES=['ほのおタイプ','みずタイプ','でんきタイプ','く�
 let ws=null,myName='',myRoomId='',isHost=false,gameState=null;
 let selectedCardIndex=null,selectedTheme='',myHand=[],myUsedCards=[];
 let reconnectTimer=null,hasSubmittedHand=false;
+let localTotalRounds=4;
+let isConnecting=false; // 二重接続/二重作成防止
 
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -324,38 +345,60 @@ function clearSession(){localStorage.removeItem('gc_name');localStorage.removeIt
 function connectWS(cb){
   const proto=location.protocol==='https:'?'wss':'ws';
   ws=new WebSocket(`${proto}://${location.host}`);
-  ws.onopen=cb;
+  ws.onopen=()=>{ isConnecting=false; cb(); };
   ws.onmessage=e=>handleMessage(JSON.parse(e.data));
-  ws.onerror=()=>{};
+  ws.onerror=()=>{ isConnecting=false; };
   ws.onclose=()=>{
+    isConnecting=false;
     if(!myName||!myRoomId)return;
-    reconnectTimer=setTimeout(attemptReconnect,5000);
+    reconnectTimer=setTimeout(attemptReconnect,3000);
   };
 }
 function attemptReconnect(){
   if(!myName||!myRoomId)return;
+  if(isConnecting)return;
+  isConnecting=true;
   const proto=location.protocol==='https:'?'wss':'ws';
   ws=new WebSocket(`${proto}://${location.host}`);
-  ws.onopen=()=>send({type:'join_room',name:myName,roomId:myRoomId});
+  ws.onopen=()=>{ isConnecting=false; send({type:'join_room',name:myName,roomId:myRoomId}); };
   ws.onmessage=e=>handleMessage(JSON.parse(e.data));
-  ws.onerror=()=>{};
-  ws.onclose=()=>{reconnectTimer=setTimeout(attemptReconnect,5000);};
+  ws.onerror=()=>{ isConnecting=false; };
+  ws.onclose=()=>{
+    isConnecting=false;
+    reconnectTimer=setTimeout(attemptReconnect,3000);
+  };
 }
 function send(data){if(ws&&ws.readyState===WebSocket.OPEN)ws.send(JSON.stringify(data));}
 
 function createRoom(){
+  if(isConnecting)return;
   const name=document.getElementById('create-name').value.trim();
   if(!name){document.getElementById('create-error').textContent='名前を入力してください';return;}
+  document.getElementById('create-error').textContent='';
+  const btn=document.getElementById('create-room-btn');
+  btn.disabled=true; btn.textContent='作成中…';
+  isConnecting=true;
   myName=name;isHost=true;
-  connectWS(()=>send({type:'create_room',name}));
+  connectWS(()=>{
+    send({type:'create_room',name});
+    setTimeout(()=>{ btn.disabled=false; btn.textContent='部屋を作成する'; },1500);
+  });
 }
 function joinRoom(){
+  if(isConnecting)return;
   const name=document.getElementById('join-name').value.trim();
   const roomId=document.getElementById('join-room-id').value.trim().toUpperCase();
   if(!name){document.getElementById('join-error').textContent='名前を入力してください';return;}
   if(roomId.length!==5){document.getElementById('join-error').textContent='ルームIDは5文字です';return;}
+  document.getElementById('join-error').textContent='';
+  const btn=document.getElementById('join-room-btn');
+  btn.disabled=true; btn.textContent='接続中…';
+  isConnecting=true;
   myName=name;myRoomId=roomId;
-  connectWS(()=>send({type:'join_room',name,roomId}));
+  connectWS(()=>{
+    send({type:'join_room',name,roomId});
+    setTimeout(()=>{ btn.disabled=false; btn.textContent='参加する'; },1500);
+  });
 }
 
 window.addEventListener('load',()=>{
@@ -373,8 +416,13 @@ function handleMessage(msg){
     if(myHand.length>0)hasSubmittedHand=true;
     if(msg.phase==='hand_input'&&!hasSubmittedHand){document.getElementById('hand-input-theme').textContent=msg.theme;renderHandInputSlots();showScreen('hand-input');}
   }
-  else if(msg.type==='error'){clearSession();myName='';myRoomId='';alert(msg.message);showScreen('top');}
-  else if(msg.type==='state'){gameState=msg;renderState(msg);}
+  else if(msg.type==='error'){
+    // ルームが見つからない場合のみセッションをクリア。それ以外(満員等)は維持
+    if(msg.message==='ルームが見つかりません'){clearSession();myName='';myRoomId='';}
+    alert(msg.message);
+    if(msg.message==='ルームが見つかりません')showScreen('top');
+  }
+  else if(msg.type==='state'){gameState=msg;syncMyHandFromState(msg);renderState(msg);}
   else if(msg.type==='your_turn_input'){
     document.getElementById('hand-input-theme').textContent=msg.theme;
     hasSubmittedHand=false;
@@ -383,7 +431,14 @@ function handleMessage(msg){
   }
 }
 
-// 管理バーを全画面で更新
+// state内の自分のusedCardsで、被せられて消費済みになったカードも反映する
+function syncMyHandFromState(state){
+  const me=state.players.find(p=>p.name===myName);
+  if(me&&me.usedCards){
+    me.usedCards.forEach(i=>{ if(!myUsedCards.includes(i)) myUsedCards.push(i); });
+  }
+}
+
 function renderAdminBar(players,suffix){
   const el=document.getElementById('admin-'+suffix);
   if(!el||!players)return;
@@ -420,15 +475,36 @@ function renderLobby(state){
     div.innerHTML=`<span style="font-size:18px;">${p.avatar}</span><span style="font-weight:700;">${p.name}</span>${p.isHost?'<span style="margin-left:auto;font-size:11px;color:var(--yellow);font-weight:800;">HOST</span>':''}`;
     list.appendChild(div);
   });
-  if(isHost){document.getElementById('lobby-host-area').style.display='block';document.getElementById('lobby-wait-text').style.display='none';document.getElementById('start-game-btn').disabled=state.players.length<2;}
-  else{document.getElementById('lobby-host-area').style.display='none';document.getElementById('lobby-wait-text').style.display='block';}
+  localTotalRounds=state.totalRounds;
+  if(isHost){
+    document.getElementById('lobby-host-area').style.display='block';
+    document.getElementById('lobby-wait-text').style.display='none';
+    document.getElementById('lobby-round-setting').style.display='block';
+    document.getElementById('lobby-round-display').style.display='none';
+    document.getElementById('round-stepper-value').textContent=state.totalRounds;
+    document.getElementById('start-game-btn').disabled=state.players.length<2;
+  } else {
+    document.getElementById('lobby-host-area').style.display='none';
+    document.getElementById('lobby-wait-text').style.display='block';
+    document.getElementById('lobby-round-setting').style.display='none';
+    document.getElementById('lobby-round-display').style.display='block';
+    document.getElementById('lobby-round-display-value').textContent=state.totalRounds;
+  }
   renderAdminBar(state.players,'lobby');
+}
+
+function changeRounds(delta){
+  const next=localTotalRounds+delta;
+  if(next<2||next>6)return;
+  localTotalRounds=next;
+  document.getElementById('round-stepper-value').textContent=localTotalRounds;
+  send({type:'set_total_rounds',totalRounds:localTotalRounds});
 }
 
 let themeOptions=[];
 function renderThemeSelect(state){
   showScreen('theme');
-  document.getElementById('theme-badge').textContent=`ラウンド${state.currentRound}/4`;
+  document.getElementById('theme-badge').textContent=`ラウンド${state.currentRound}/${state.totalRounds}`;
   document.getElementById('theme-prize').textContent=`$${state.prizePool}`;
   selectedTheme='';
   document.getElementById('theme-selected-text').textContent='選んでください';
@@ -465,30 +541,24 @@ function applyCustomTheme(){
 
 function renderThemeWait(state){
   showScreen('theme-wait');
-  document.getElementById('theme-wait-badge').textContent=`ラウンド${state.currentRound}/4`;
+  document.getElementById('theme-wait-badge').textContent=`ラウンド${state.currentRound}/${state.totalRounds}`;
   document.getElementById('theme-wait-prize').textContent=`$${state.prizePool}`;
   renderAdminBar(state.players,'theme-wait');
 }
 
-// 手札入力：一斉入力モード
 function renderHandInput(state){
-  // 自分がまだ提出していない→hand-input画面を表示
   if(!hasSubmittedHand){
     document.getElementById('hand-input-theme').textContent=state.currentTheme;
-    if(document.getElementById('screen-hand-input').classList.contains('active')){
-      // すでに入力画面にいる場合は提出状況だけ更新
-    } else {
+    if(!document.getElementById('screen-hand-input').classList.contains('active')){
       renderHandInputSlots();
-      showScreen('hand-input');
     }
+    showScreen('hand-input');
   } else {
-    // 提出済み→同じ画面にいるが提出済みメッセージ表示
     showScreen('hand-input');
     document.getElementById('hand-input-theme').textContent=state.currentTheme;
     document.getElementById('submit-hand-btn').style.display='none';
     document.getElementById('hand-submitted-msg').style.display='block';
   }
-  // 提出状況を更新
   const statusList=document.getElementById('submit-status-list');
   statusList.innerHTML='';
   state.players.forEach(p=>{
@@ -508,7 +578,7 @@ function renderHandInputSlots(){
   for(let i=0;i<6;i++){
     const div=document.createElement('div');
     div.style.cssText='display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.15);border-radius:12px;padding:9px 12px;';
-    div.innerHTML=`<div style="width:22px;height:22px;background:var(--red);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;">${i+1}</div><input type="text" placeholder="ポケモン名…" id="hand-slot-${i}" autocomplete="off" autocorrect="off" class="fw" style="font-size:14px;padding:4px 8px;">`;
+    div.innerHTML=`<div style="width:22px;height:22px;background:var(--red);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;">${i+1}</div><input type="text" placeholder="ここに答えを入力…" id="hand-slot-${i}" autocomplete="off" autocorrect="off" class="fw" style="font-size:14px;padding:4px 8px;">`;
     slots.appendChild(div);
   }
 }
@@ -517,7 +587,7 @@ function submitHand(){
   const cards=[];
   for(let i=0;i<6;i++){
     const v=document.getElementById(`hand-slot-${i}`).value.trim();
-    if(!v){alert('6枚すべて入力してください');return;}
+    if(!v){alert('6つすべて入力してください');return;}
     cards.push(v);
   }
   myHand=cards;myUsedCards=[];hasSubmittedHand=true;
@@ -531,7 +601,7 @@ function renderPlay(state){
   const currentName=state.turnOrder[state.currentPlayerIndex];
   const currentPlayer=state.players.find(p=>p.name===currentName);
   const isMyTurn=currentName===myName;
-  document.getElementById('play-badge').textContent=`ラウンド${state.currentRound}/4`;
+  document.getElementById('play-badge').textContent=`ラウンド${state.currentRound}/${state.totalRounds}`;
   document.getElementById('play-player-name').textContent=currentPlayer?currentPlayer.name:'';
   document.getElementById('play-player-money').textContent=currentPlayer?`$${currentPlayer.money}`:'';
   document.getElementById('play-current-player').style.background=currentPlayer?.color||'#E3350D';
@@ -570,7 +640,7 @@ function renderResult(state){
   showScreen('result');
   const r=state.lastResult;
   if(!r)return;
-  document.getElementById('result-badge').textContent=`ラウンド${state.currentRound}/4`;
+  document.getElementById('result-badge').textContent=`ラウンド${state.currentRound}/${state.totalRounds}`;
   document.getElementById('result-emoji').textContent=r.matchCount>0?'🎉':'💸';
   document.getElementById('result-title').textContent=r.matchCount>0?`${r.matchCount}人と一致！`:'ハズレ…';
   document.getElementById('result-card').textContent=r.cardValue;
@@ -594,8 +664,8 @@ function renderResult(state){
     document.getElementById('result-host-btn').style.display='block';
     document.getElementById('result-wait-text').style.display='none';
     const btn=document.getElementById('next-turn-btn');
-    btn.textContent=roundOver?'ラウンド終了！':'次のターンへ';
-    btn.onclick=roundOver?()=>nextRound():()=>nextTurn();
+    btn.textContent=roundOver?'ラウンド終了結果を見る':'次のターンへ';
+    btn.onclick=()=>nextTurn();
   } else {
     document.getElementById('result-host-btn').style.display='none';
     document.getElementById('result-wait-text').style.display='block';
@@ -606,16 +676,20 @@ function renderResult(state){
 function renderRoundEnd(state){
   showScreen('round-end');
   const isLast=state.currentRound>=state.totalRounds;
-  document.getElementById('round-end-badge').textContent=`ラウンド${state.currentRound}/4 終了`;
+  document.getElementById('round-end-badge').textContent=`ラウンド${state.currentRound}/${state.totalRounds} 終了`;
   document.getElementById('round-end-title').textContent=isLast?'最終結果！':`ラウンド ${state.currentRound} 終了！`;
   document.getElementById('round-end-prize').textContent=`$${state.prizePool}`;
   const sorted=[...state.players].sort((a,b)=>b.money-a.money);
   const list=document.getElementById('round-end-scores');
   list.innerHTML='';
   sorted.forEach((p,i)=>{
+    const delta=p.money-(p.roundStartMoney!==undefined?p.roundStartMoney:p.money);
+    let deltaClass='zero',deltaText='±$0';
+    if(delta>0){deltaClass='up';deltaText=`+$${delta}`;}
+    else if(delta<0){deltaClass='down';deltaText=`-$${Math.abs(delta)}`;}
     const div=document.createElement('div');
     div.className='score-row'+(i===0?' first':'');
-    div.innerHTML=`<div class="score-rank">${i+1}</div><div style="font-size:18px;">${p.avatar}</div><div style="font-weight:700;flex:1;">${p.name}</div><div style="font-family:'Zen Dots',sans-serif;font-size:18px;color:var(--yellow);">$${p.money}</div>`;
+    div.innerHTML=`<div class="score-rank">${i+1}</div><div style="font-size:18px;">${p.avatar}</div><div style="font-weight:700;flex:1;">${p.name}</div><div class="score-delta ${deltaClass}">${deltaText}</div><div style="font-family:'Zen Dots',sans-serif;font-size:18px;color:var(--yellow);">$${p.money}</div>`;
     list.appendChild(div);
   });
   if(isHost){
