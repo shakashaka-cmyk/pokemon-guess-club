@@ -395,6 +395,7 @@ function joinRoom(){
   btn.disabled=true; btn.textContent='接続中…';
   isConnecting=true;
   myName=name;myRoomId=roomId;
+  saveSession();
   connectWS(()=>{
     send({type:'join_room',name,roomId});
     setTimeout(()=>{ btn.disabled=false; btn.textContent='参加する'; },1500);
@@ -414,7 +415,14 @@ function handleMessage(msg){
     if(reconnectTimer){clearTimeout(reconnectTimer);reconnectTimer=null;}
     myHand=msg.hand||[];myUsedCards=msg.usedCards||[];
     if(myHand.length>0)hasSubmittedHand=true;
-    if(msg.phase==='hand_input'&&!hasSubmittedHand){document.getElementById('hand-input-theme').textContent=msg.theme;renderHandInputSlots();showScreen('hand-input');}
+    if(msg.phase==='hand_input'&&!hasSubmittedHand){
+      document.getElementById('hand-input-theme').textContent=msg.theme;
+      renderHandInputSlots();
+      showScreen('hand-input');
+    } else if(msg.phase==='lobby'){
+      showScreen('lobby');
+    }
+    // それ以外のフェーズはこの直後に届くstateメッセージで自動的に正しい画面に切り替わる
   }
   else if(msg.type==='error'){
     // ルームが見つからない場合のみセッションをクリア。それ以外(満員等)は維持

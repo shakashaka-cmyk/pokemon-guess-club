@@ -293,9 +293,18 @@ wss.on('connection', (ws) => {
         if (next) next.isHost = true;
       }
       r.players = r.players.filter(p => p.name !== playerName);
-      if (r.players.length === 0) { delete rooms[playerRoomId]; return; }
+      if (r.players.length === 0) {
+        // 全員切断してもすぐには削除せず、5分間ルームを保持する
+        // (Renderのスリープ復帰直後など、全員が一斉に再接続する場合に対応)
+        if (r.emptyRoomTimer) clearTimeout(r.emptyRoomTimer);
+        r.emptyRoomTimer = setTimeout(() => {
+          const stillEmpty = rooms[playerRoomId] && rooms[playerRoomId].players.length === 0;
+          if (stillEmpty) delete rooms[playerRoomId];
+        }, 5 * 60 * 1000);
+        return;
+      }
       broadcast(playerRoomId, getRoomState(playerRoomId));
-    }, 30000);
+    }, 60000);
   });
 });
 
