@@ -46,6 +46,7 @@ function getRoomState(roomId) {
     })),
     currentRound: room.currentRound,
     totalRounds: room.totalRounds,
+    themeMode: room.themeMode,
     currentTheme: room.currentTheme,
     prizePool: room.prizePool,
     currentPlayerIndex: room.currentPlayerIndex,
@@ -59,7 +60,6 @@ function getRoomState(roomId) {
 
 const AVATARS = ['🔥','💧','🌿','⚡','🌙','🌟','🐉','👻','🌊','🍃'];
 const COLORS = ['#E3350D','#3B82F6','#22C55E','#EAB308','#8B5CF6','#EC4899','#F97316','#6366F1','#06B6D4','#10B981'];
-
 function checkRoundOver(room) {
   return room.players.some(p => p.hand.filter((_, i) => !p.usedCards.includes(i)).length === 0);
 }
@@ -76,7 +76,7 @@ wss.on('connection', (ws) => {
       // 既に同名のルームを作成済みで二重作成を防ぐ(多重クリック対策)
       const roomId = Math.random().toString(36).substr(2, 5).toUpperCase();
       rooms[roomId] = {
-        phase: 'lobby', players: [], currentRound: 1, totalRounds: 4,
+        phase: 'lobby', players: [], currentRound: 1, totalRounds: 4, themeMode: 'pokemon',
         currentTheme: '', prizePool: 0, currentPlayerIndex: 0,
         turnOrder: [], handInputIndex: 0, lastResult: null, clients: [],
       };
@@ -135,6 +135,27 @@ wss.on('connection', (ws) => {
         room.totalRounds = n;
         broadcast(playerRoomId, getRoomState(playerRoomId));
       }
+    }
+
+    else if (msg.type === 'set_theme_mode') {
+      const room = rooms[playerRoomId];
+      if (!room) return;
+      const host = room.players.find(p => p.name === playerName);
+      if (!host?.isHost) return;
+      if (room.phase !== 'lobby') return;
+      if (msg.themeMode === 'pokemon' || msg.themeMode === 'free') {
+        room.themeMode = msg.themeMode;
+        broadcast(playerRoomId, getRoomState(playerRoomId));
+      }
+    }
+
+    else if (msg.type === 'end_game_force') {
+      const room = rooms[playerRoomId];
+      if (!room) return;
+      const host = room.players.find(p => p.name === playerName);
+      if (!host?.isHost) return;
+      room.phase = 'game_end';
+      broadcast(playerRoomId, getRoomState(playerRoomId));
     }
 
     else if (msg.type === 'start_game') {

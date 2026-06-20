@@ -90,6 +90,12 @@ input[type=text].fw{width:100%;display:block;}
 .stepper-btn{width:36px;height:36px;border-radius:50%;border:1.5px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:white;font-size:18px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .stepper-btn:disabled{opacity:.3;cursor:not-allowed;}
 .stepper-value{font-family:'Zen Dots',sans-serif;font-size:28px;color:var(--yellow);min-width:50px;text-align:center;}
+.all-status-row{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);}
+.all-status-row.is-turn{border-color:var(--yellow);background:rgba(255,203,5,.08);}
+.all-status-name{font-weight:700;flex:1;font-size:13px;}
+.all-status-cards{font-size:12px;color:rgba(255,255,255,.6);}
+.all-status-money{font-family:'Zen Dots',sans-serif;font-size:14px;color:var(--yellow);}
+.danger-btn{background:rgba(227,53,13,.15);color:#ff6b4a;border:1.5px solid rgba(227,53,13,.4);padding:8px 14px;border-radius:10px;font-family:inherit;font-weight:800;font-size:12px;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -154,6 +160,17 @@ input[type=text].fw{width:100%;display:block;}
     <div class="room-id-display" id="lobby-room-id">-----</div>
     <div class="section-title">参加中</div>
     <div id="lobby-players" style="display:flex;flex-direction:column;gap:8px;"></div>
+
+    <div id="lobby-thememode-setting" style="display:none;">
+      <div class="section-title">お題モード</div>
+      <div class="themes-grid">
+        <div class="theme-chip" id="mode-chip-pokemon" onclick="changeThemeMode('pokemon')">🔴 ポケモン限定</div>
+        <div class="theme-chip" id="mode-chip-free" onclick="changeThemeMode('free')">🌐 なんでもOK</div>
+      </div>
+    </div>
+    <div id="lobby-thememode-display" style="display:none;">
+      <div class="prize-row"><div><div class="prize-label">お題モード</div></div><div class="prize-amount" id="lobby-thememode-display-value" style="font-size:16px;"></div></div>
+    </div>
 
     <div id="lobby-round-setting" style="display:none;">
       <div class="section-title">ラウンド数</div>
@@ -264,6 +281,8 @@ input[type=text].fw{width:100%;display:block;}
         <div style="margin-top:8px;font-size:14px;" id="play-wait-text"></div>
       </div>
     </div>
+    <div class="section-title">全員の状況</div>
+    <div id="play-all-status" style="display:flex;flex-direction:column;gap:6px;"></div>
   </div>
   <div class="admin-bar"><div class="admin-bar-title">ONLINE</div><div class="admin-players" id="admin-play"></div></div>
 </div>
@@ -309,6 +328,9 @@ input[type=text].fw{width:100%;display:block;}
   <div class="admin-bar"><div class="admin-bar-title">ONLINE</div><div class="admin-players" id="admin-round-end"></div></div>
 </div>
 
+<!-- HOST FORCE END BUTTON (フローティング、ロビー・ゲーム終了画面以外で表示) -->
+<button id="force-end-btn" onclick="confirmForceEnd()" style="display:none;position:fixed;top:14px;right:14px;z-index:200;background:rgba(227,53,13,.9);color:white;border:1.5px solid rgba(255,255,255,.4);border-radius:20px;padding:6px 12px;font-family:inherit;font-weight:800;font-size:11px;cursor:pointer;">🛑 終了</button>
+
 <!-- GAME END -->
 <div id="screen-game-end" class="screen">
   <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;gap:24px;text-align:center;">
@@ -328,11 +350,13 @@ input[type=text].fw{width:100%;display:block;}
 
 <script>
 const THEMES=['ほのおタイプ','みずタイプ','でんきタイプ','くさタイプ','こおりタイプ','かくとうタイプ','どくタイプ','じめんタイプ','ひこうタイプ','エスパータイプ','むしタイプ','いわタイプ','ゴーストタイプ','ドラゴンタイプ','あくタイプ','はがねタイプ','フェアリータイプ','かわいいポケモン','こわいポケモン','強そうなポケモン','かっこいいポケモン','伝説のポケモン','進化しないポケモン','最終進化形のポケモン','第1世代のポケモン','第2世代のポケモン','第5世代のポケモン','空を飛べるポケモン','人気の高いポケモン','主人公が使ったポケモン','ロケット団のポケモン','ジムリーダーが使うポケモン'];
+const FREE_THEMES=['好きな食べ物','コンビニで売ってるもの','夏に食べたくなるもの','学校にあるもの','黄色いもの','丸いもの','旅行で行きたい場所','好きな動物','テレビ番組','よく使うアプリ','子供の頃好きだったアニメ','怖いもの','100均で売ってるもの','飲み物の種類','スポーツの種類','楽器の種類','寿司ネタ','カレーの具','コンビニスイーツ','文房具','遊園地のアトラクション','映画のジャンル','部活・サークルの種類','SNSの種類','お祭りの食べ物','靴の種類','家にあるもの','駅にあるもの','冬に欲しいもの','プレゼントしたいもの'];
 
 let ws=null,myName='',myRoomId='',isHost=false,gameState=null;
 let selectedCardIndex=null,selectedTheme='',myHand=[],myUsedCards=[];
 let reconnectTimer=null,hasSubmittedHand=false;
 let localTotalRounds=4;
+let localThemeMode='pokemon';
 let isConnecting=false; // 二重接続/二重作成防止
 
 function showScreen(id){
@@ -463,6 +487,9 @@ function renderState(state){
   const myPlayer=state.players.find(p=>p.name===myName);
   if(myPlayer)isHost=myPlayer.isHost;
 
+  const endBtn=document.getElementById('force-end-btn');
+  endBtn.style.display=(isHost&&state.phase!=='lobby'&&state.phase!=='game_end')?'block':'none';
+
   if(state.phase==='lobby'){renderLobby(state);}
   else if(state.phase==='theme_select'){isHost?renderThemeSelect(state):renderThemeWait(state);}
   else if(state.phase==='hand_input'){renderHandInput(state);}
@@ -470,6 +497,12 @@ function renderState(state){
   else if(state.phase==='result'){renderResult(state);}
   else if(state.phase==='round_end'){renderRoundEnd(state);}
   else if(state.phase==='game_end'){renderGameEnd(state);}
+}
+
+function confirmForceEnd(){
+  if(confirm('ゲームを今すぐ終了しますか？\n（不備があった時の緊急停止用です。全員のスコアはこの時点で確定し、結果画面に移動します）')){
+    send({type:'end_game_force'});
+  }
 }
 
 function renderLobby(state){
@@ -484,21 +517,39 @@ function renderLobby(state){
     list.appendChild(div);
   });
   localTotalRounds=state.totalRounds;
+  localThemeMode=state.themeMode||'pokemon';
   if(isHost){
     document.getElementById('lobby-host-area').style.display='block';
     document.getElementById('lobby-wait-text').style.display='none';
     document.getElementById('lobby-round-setting').style.display='block';
     document.getElementById('lobby-round-display').style.display='none';
+    document.getElementById('lobby-thememode-setting').style.display='block';
+    document.getElementById('lobby-thememode-display').style.display='none';
     document.getElementById('round-stepper-value').textContent=state.totalRounds;
     document.getElementById('start-game-btn').disabled=state.players.length<2;
+    updateThemeModeChips();
   } else {
     document.getElementById('lobby-host-area').style.display='none';
     document.getElementById('lobby-wait-text').style.display='block';
     document.getElementById('lobby-round-setting').style.display='none';
     document.getElementById('lobby-round-display').style.display='block';
     document.getElementById('lobby-round-display-value').textContent=state.totalRounds;
+    document.getElementById('lobby-thememode-setting').style.display='none';
+    document.getElementById('lobby-thememode-display').style.display='block';
+    document.getElementById('lobby-thememode-display-value').textContent=localThemeMode==='pokemon'?'🔴 ポケモン限定':'🌐 なんでもOK';
   }
   renderAdminBar(state.players,'lobby');
+}
+
+function updateThemeModeChips(){
+  document.getElementById('mode-chip-pokemon').classList.toggle('active',localThemeMode==='pokemon');
+  document.getElementById('mode-chip-free').classList.toggle('active',localThemeMode==='free');
+}
+
+function changeThemeMode(mode){
+  localThemeMode=mode;
+  updateThemeModeChips();
+  send({type:'set_theme_mode',themeMode:mode});
 }
 
 function changeRounds(delta){
@@ -518,7 +569,8 @@ function renderThemeSelect(state){
   document.getElementById('theme-selected-text').textContent='選んでください';
   document.getElementById('select-theme-btn').disabled=true;
   document.getElementById('custom-theme-input').value='';
-  themeOptions=[...THEMES].sort(()=>Math.random()-.5).slice(0,8);
+  const pool=(state.themeMode==='free')?FREE_THEMES:THEMES;
+  themeOptions=[...pool].sort(()=>Math.random()-.5).slice(0,8);
   const grid=document.getElementById('themes-grid');
   grid.innerHTML='';
   themeOptions.forEach(t=>{
@@ -629,6 +681,15 @@ function renderPlay(state){
     document.getElementById('play-wait-text').textContent=`${currentName} のターン…`;
   }
   renderAdminBar(state.players,'play');
+
+  const statusList=document.getElementById('play-all-status');
+  statusList.innerHTML='';
+  state.players.forEach(p=>{
+    const row=document.createElement('div');
+    row.className='all-status-row'+(p.name===currentName?' is-turn':'');
+    row.innerHTML=`<span style="font-size:16px;">${p.avatar}</span><span class="all-status-name">${p.name}${p.name===currentName?' 🎲':''}</span><span class="all-status-cards">🃏${p.cardCount}枚</span><span class="all-status-money">$${p.money}</span>`;
+    statusList.appendChild(row);
+  });
 }
 
 function renderMyHand(){
