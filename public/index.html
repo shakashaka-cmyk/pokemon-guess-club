@@ -432,6 +432,24 @@ window.addEventListener('load',()=>{
   if(n&&r){myName=n;myRoomId=r;attemptReconnect();}
 });
 
+// スマホでバックグラウンドに回した後フォアグラウンドに戻った時、
+// WebSocketが死んでいないか確認し、死んでいれば再接続する。
+// (スマホブラウザはバックグラウンド中にWebSocketを切断することが多く、
+//  closeイベントが遅れて発火する/発火しないことがあるため明示的にチェックする)
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'){
+    if(myName&&myRoomId){
+      if(!ws||ws.readyState!==WebSocket.OPEN){
+        if(reconnectTimer){clearTimeout(reconnectTimer);reconnectTimer=null;}
+        attemptReconnect();
+      } else {
+        // 接続は生きているように見えても、念のため最新状態を要求する
+        send({type:'request_state'});
+      }
+    }
+  }
+});
+
 function handleMessage(msg){
   if(msg.type==='room_created'){myRoomId=msg.roomId;saveSession();showScreen('lobby');document.getElementById('lobby-room-id').textContent=myRoomId;}
   else if(msg.type==='joined'){myRoomId=msg.roomId;saveSession();showScreen('lobby');document.getElementById('lobby-room-id').textContent=myRoomId;}

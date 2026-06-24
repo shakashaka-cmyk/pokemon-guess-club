@@ -11,6 +11,19 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const rooms = {};
 
+// 死んだ接続(クライアントが落ちたのにcloseイベントが発火しないケース)を検知する
+function heartbeat() { this.isAlive = true; }
+
+setInterval(() => {
+  wss.clients.forEach((ws) => {
+    if (ws.isAlive === false) {
+      return ws.terminate(); // terminateすると確実にcloseイベントが発火する
+    }
+    ws.isAlive = false;
+    ws.ping();
+  });
+}, 20000);
+
 function broadcast(roomId, data) {
   const room = rooms[roomId];
   if (!room) return;
@@ -68,12 +81,20 @@ function checkRoundOver(room) {
 wss.on('connection', (ws) => {
   let playerRoomId = null;
   let playerName = null;
+  ws.isAlive = true;
+  ws.on('pong', heartbeat);
 
   ws.on('message', (raw) => {
     let msg;
     try { msg = JSON.parse(raw); } catch { return; }
 
-    if (msg.type === 'create_room') {
+    if (msg.type === 'request_state') {
+      if (playerRoomId && rooms[playerRoomId]) {
+        sendTo(ws, getRoomState(playerRoomId));
+      }
+    }
+
+    else if (msg.type === 'create_room') {
       // 既に同名のルームを作成済みで二重作成を防ぐ(多重クリック対策)
       const roomId = Math.random().toString(36).substr(2, 5).toUpperCase();
       rooms[roomId] = {
