@@ -53,6 +53,7 @@ function getRoomState(roomId) {
     turnOrder: room.turnOrder,
     handInputIndex: room.handInputIndex,
     lastResult: room.lastResult,
+    roundJustEnded: room.roundJustEnded || false,
     submittedCount: room.players.filter(p => p.hand && p.hand.length > 0).length,
     totalCount: room.players.length,
   };
@@ -243,8 +244,10 @@ wss.on('connection', (ws) => {
 
       room.lastResult = { playerName, cardValue: player.hand[cardIndex], matchCount, matchedPlayers, prizeChange, prizePool: room.prizePool };
 
-      const roundOver = checkRoundOver(room);
-      room.phase = roundOver ? 'round_end' : 'result';
+      // 最後の1枚でも必ず一度 result 画面でマッチ結果を見せる。
+      // round_end への遷移は next_turn が呼ばれたタイミングで行う。
+      room.roundJustEnded = checkRoundOver(room);
+      room.phase = 'result';
       broadcast(playerRoomId, getRoomState(playerRoomId));
     }
 

@@ -728,7 +728,7 @@ function renderResult(state){
     div.innerHTML=`<div><div style="font-weight:700;">${p.avatar} ${p.name}</div></div><div class="result-badge">${matched?'✓ MATCH':'✗ MISS'}</div>`;
     list.appendChild(div);
   });
-  const roundOver=state.phase==='round_end';
+  const roundOver=state.roundJustEnded===true;
   if(isHost){
     document.getElementById('result-host-btn').style.display='block';
     document.getElementById('result-wait-text').style.display='none';
